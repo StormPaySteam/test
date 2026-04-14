@@ -1704,4 +1704,15 @@ function initTos() {
 
 /* ─── SCROLL REVEAL ─── */
 const observer = new IntersectionObserver(entries => {
-  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+/* ─── INIT ─── */
+initTos();
+renderCerts();
+loadGiftCards();
+loadServices();
+</script>
+</body>
+</html>

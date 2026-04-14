@@ -1613,11 +1613,12 @@ document.querySelectorAll('.modal-backdrop').forEach(m => {
 
 /* ─── ADMIN PANEL ─── */
 let logoClickCount = 0, logoClickTimer = null;
-document.getElementById('logoLink').addEventListener('click', (e) => {
-  e.preventDefault();
+
+function handleLogoClick(e) {
+  if (e) e.preventDefault();
   logoClickCount++;
   clearTimeout(logoClickTimer);
-  logoClickTimer = setTimeout(() => logoClickCount = 0, 2000);
+  logoClickTimer = setTimeout(() => { logoClickCount = 0; }, 2000);
   if (logoClickCount >= 4) {
     logoClickCount = 0;
     const pwd = prompt('\uD83D\uDD10 Введите пароль администратора:');
@@ -1627,8 +1628,27 @@ document.getElementById('logoLink').addEventListener('click', (e) => {
       alert('\u274C Неверный пароль');
     }
   }
+}
+
+// Кнопка Панель — тоже через пароль
+document.getElementById('adminToggleBtn').addEventListener('click', (e) => {
+  e.preventDefault();
+  const pwd = prompt('\uD83D\uDD10 Введите пароль администратора:');
+  if (pwd === '1122') {
+    toggleAdmin();
+  } else if (pwd !== null) {
+    alert('\u274C Неверный пароль');
+  }
 });
-document.getElementById('adminToggleBtn').style.display = 'none';
+
+// Логотип — 4 клика
+const logoEl = document.getElementById('logoLink');
+if (logoEl) {
+  logoEl.addEventListener('click', handleLogoClick);
+  // на всякий случай также через onclick
+  logoEl.onclick = handleLogoClick;
+}
+
 document.getElementById('adminClose').addEventListener('click', () => {
   document.getElementById('adminPanel').classList.remove('open');
 });

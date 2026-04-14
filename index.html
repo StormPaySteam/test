@@ -1388,22 +1388,34 @@ document.getElementById('certSaveBtn').addEventListener('click', () => {
 });
 
 /* ─── WATA API ─── */
+const CORS_PROXIES = [
+  url => url,                                              // прямой запрос
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+];
+
 async function fetchWata(endpoint) {
-  let res;
-  try {
-    res = await fetch(`${API_BASE}${endpoint}`, { headers });
-  } catch (networkErr) {
-    // CORS или сетевая ошибка
-    console.error(`[WATA] Сетевая ошибка (возможно CORS) для ${endpoint}:`, networkErr);
-    throw new Error(`Сетевая ошибка: ${networkErr.message}`);
+  const targetUrl = `${API_BASE}${endpoint}`;
+  let lastError;
+  for (const proxyFn of CORS_PROXIES) {
+    const url = proxyFn(targetUrl);
+    try {
+      const res = await fetch(url, { headers });
+      if (!res.ok) {
+        let body = '';
+        try { body = await res.text(); } catch {}
+        console.error(`[WATA] HTTP ${res.status} для ${url}:`, body);
+        lastError = new Error(`HTTP ${res.status}: ${body.substring(0, 120)}`);
+        continue;
+      }
+      const text = await res.text();
+      try { return JSON.parse(text); } catch { lastError = new Error('Некорректный ответ API'); continue; }
+    } catch (networkErr) {
+      console.warn(`[WATA] Ошибка для ${url}:`, networkErr.message);
+      lastError = networkErr;
+    }
   }
-  if (!res.ok) {
-    let body = '';
-    try { body = await res.text(); } catch {}
-    console.error(`[WATA] HTTP ${res.status} для ${endpoint}:`, body);
-    throw new Error(`HTTP ${res.status}: ${body.substring(0, 120)}`);
-  }
-  return res.json();
+  throw new Error(lastError?.message || 'Failed to fetch');
 }
 
 function formatPrice(p) {
@@ -1680,15 +1692,23 @@ document.getElementById('testApiBtn').addEventListener('click', async () => {
   diagEl.textContent = '⏳ Проверка...';
   const results = [];
   const endpoints = ['/v3/vouchers', '/v3/topup'];
+  const proxyLabels = ['прямой', 'corsproxy.io', 'allorigins.win'];
   for (const ep of endpoints) {
-    try {
-      const res = await fetch(`${API_BASE}${ep}`, { headers });
-      const text = await res.text();
-      let preview = text.substring(0, 80);
-      results.push(`✅ ${ep} → HTTP ${res.status}: ${preview}`);
-    } catch (e) {
-      results.push(`❌ ${ep} → ${e.message}`);
+    const targetUrl = `${API_BASE}${ep}`;
+    let found = false;
+    for (let i = 0; i < CORS_PROXIES.length; i++) {
+      const url = CORS_PROXIES[i](targetUrl);
+      try {
+        const res = await fetch(url, { headers });
+        const text = await res.text();
+        results.push(`✅ ${ep} [${proxyLabels[i]}] → HTTP ${res.status}: ${text.substring(0, 80)}`);
+        found = true;
+        break;
+      } catch (e) {
+        results.push(`❌ ${ep} [${proxyLabels[i]}] → ${e.message}`);
+      }
     }
+    if (!found) results.push(`⛔ ${ep} — все прокси недоступны`);
   }
   diagEl.textContent = results.join('\n\n');
 });

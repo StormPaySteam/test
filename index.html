@@ -1613,18 +1613,24 @@ document.querySelectorAll('.modal-backdrop').forEach(m => {
 
 /* ─── ADMIN PANEL ─── */
 let logoClickCount = 0, logoClickTimer = null;
-document.getElementById('logoLink').addEventListener('click', () => {
+document.getElementById('logoLink').addEventListener('click', (e) => {
+  e.preventDefault();
   logoClickCount++;
   clearTimeout(logoClickTimer);
-  logoClickTimer = setTimeout(() => logoClickCount = 0, 1500);
-  if (logoClickCount >= 5) { logoClickCount = 0; toggleAdmin(); }
+  logoClickTimer = setTimeout(() => logoClickCount = 0, 2000);
+  if (logoClickCount >= 4) {
+    logoClickCount = 0;
+    const pwd = prompt('\uD83D\uDD10 Введите пароль администратора:');
+    if (pwd === '1122') {
+      toggleAdmin();
+    } else if (pwd !== null) {
+      alert('\u274C Неверный пароль');
+    }
+  }
 });
-document.getElementById('adminToggleBtn').addEventListener('click', toggleAdmin);
+document.getElementById('adminToggleBtn').style.display = 'none';
 document.getElementById('adminClose').addEventListener('click', () => {
   document.getElementById('adminPanel').classList.remove('open');
-});
-document.addEventListener('keydown', e => {
-  if (e.ctrlKey && e.shiftKey && e.key === 'A') toggleAdmin();
 });
 
 function toggleAdmin() {

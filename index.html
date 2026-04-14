@@ -1254,6 +1254,8 @@ body {
     <div class="admin-section">
       <div class="admin-section-title">Данные API</div>
       <button class="btn-secondary" id="reloadApiBtn" style="width:100%;font-size:13px;padding:10px;">🔄 Перезагрузить товары из API</button>
+      <button class="btn-secondary" id="testApiBtn" style="width:100%;font-size:13px;padding:10px;margin-top:8px;">🔍 Диагностика API</button>
+      <div id="apiDiagResult" style="margin-top:10px;font-size:11px;color:var(--text-tertiary);font-family:'SF Mono','Fira Code',monospace;word-break:break-all;line-height:1.6;display:none;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:10px;padding:10px 14px;"></div>
     </div>
 
     <div style="font-size:11px;color:var(--text-tertiary);text-align:center;margin-top:8px;">
@@ -1387,8 +1389,20 @@ document.getElementById('certSaveBtn').addEventListener('click', () => {
 
 /* ─── WATA API ─── */
 async function fetchWata(endpoint) {
-  const res = await fetch(`${API_BASE}${endpoint}`, { headers });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${endpoint}`, { headers });
+  } catch (networkErr) {
+    // CORS или сетевая ошибка
+    console.error(`[WATA] Сетевая ошибка (возможно CORS) для ${endpoint}:`, networkErr);
+    throw new Error(`Сетевая ошибка: ${networkErr.message}`);
+  }
+  if (!res.ok) {
+    let body = '';
+    try { body = await res.text(); } catch {}
+    console.error(`[WATA] HTTP ${res.status} для ${endpoint}:`, body);
+    throw new Error(`HTTP ${res.status}: ${body.substring(0, 120)}`);
+  }
   return res.json();
 }
 
@@ -1434,7 +1448,7 @@ async function loadGiftCards() {
       grid.appendChild(div);
     });
   } catch (e) {
-    loading.innerHTML = `<div class="error-box" style="grid-column:1/-1;">Не удалось загрузить подарочные карты. <button onclick="loadGiftCards()" style="background:none;border:none;color:inherit;cursor:pointer;text-decoration:underline;">Повторить</button></div>`;
+    loading.innerHTML = `<div class="error-box" style="grid-column:1/-1;">Не удалось загрузить подарочные карты: ${e.message}. <button onclick="loadGiftCards()" style="background:none;border:none;color:inherit;cursor:pointer;text-decoration:underline;">Повторить</button></div>`;
     console.warn('Gift cards API error:', e);
   }
 }
@@ -1500,7 +1514,7 @@ async function loadServices() {
         grid.appendChild(div);
       });
     } catch {
-      loading.innerHTML = `<div class="error-box" style="grid-column:1/-1;">Не удалось загрузить сервисы. <button onclick="loadServices()" style="background:none;border:none;color:inherit;cursor:pointer;text-decoration:underline;">Повторить</button></div>`;
+      loading.innerHTML = `<div class="error-box" style="grid-column:1/-1;">Не удалось загрузить сервисы: ${e.message}. <button onclick="loadServices()" style="background:none;border:none;color:inherit;cursor:pointer;text-decoration:underline;">Повторить</button></div>`;
     }
     console.warn('Services API error:', e);
   }
@@ -1632,6 +1646,25 @@ document.getElementById('reloadApiBtn').addEventListener('click', () => {
   loadServices();
   document.getElementById('reloadApiBtn').textContent = '⏳ Загрузка...';
   setTimeout(() => document.getElementById('reloadApiBtn').textContent = '🔄 Перезагрузить товары из API', 3000);
+});
+
+document.getElementById('testApiBtn').addEventListener('click', async () => {
+  const diagEl = document.getElementById('apiDiagResult');
+  diagEl.style.display = 'block';
+  diagEl.textContent = '⏳ Проверка...';
+  const results = [];
+  const endpoints = ['/v3/vouchers', '/v3/topup'];
+  for (const ep of endpoints) {
+    try {
+      const res = await fetch(`${API_BASE}${ep}`, { headers });
+      const text = await res.text();
+      let preview = text.substring(0, 80);
+      results.push(`✅ ${ep} → HTTP ${res.status}: ${preview}`);
+    } catch (e) {
+      results.push(`❌ ${ep} → ${e.message}`);
+    }
+  }
+  diagEl.textContent = results.join('\n\n');
 });
 
 document.getElementById('addCertBtn').addEventListener('click', openAddCert);

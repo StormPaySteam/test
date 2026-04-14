@@ -1402,7 +1402,7 @@ async function loadGiftCards() {
   const loading = document.getElementById('giftCardsLoading');
   const grid = document.getElementById('giftCardsGrid');
   try {
-    const data = await fetchWata('/vouchers');
+    const data = await fetchWata('/vouchers/services');
     const items = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
     // Filter Apple/AppStore related items
     const appleItems = items.filter(s => {
@@ -1444,7 +1444,7 @@ async function loadServices() {
   const loading = document.getElementById('servicesLoading');
   const grid = document.getElementById('servicesGrid');
   try {
-    const data = await fetchWata('/topup');
+    const data = await fetchWata('/topup/games');
     const items = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
     if (!items.length) throw new Error('empty');
     loading.style.display = 'none';
@@ -1474,7 +1474,7 @@ async function loadServices() {
   } catch (e) {
     // Fallback: try vouchers endpoint for all services
     try {
-      const data2 = await fetchWata('/vouchers');
+      const data2 = await fetchWata('/vouchers/services');
       const items2 = Array.isArray(data2) ? data2 : (data2.data || data2.items || data2.result || []);
       if (!items2.length) throw new Error('empty');
       loading.style.display = 'none';
@@ -1513,7 +1513,7 @@ async function openVoucherDetail(id, name) {
   document.getElementById('wmCodesList').innerHTML = '';
   document.getElementById('wataModal').classList.add('open');
   try {
-    const data = await fetchWata(`/vouchers/${id}/codes`);
+    const data = await fetchWata(`/vouchers/services/${id}/vouchers`);
     const codes = Array.isArray(data) ? data : (data.data || data.items || data.codes || data.result || []);
     document.getElementById('wmImgBlock').innerHTML = '';
     if (!codes.length) {
@@ -1551,7 +1551,7 @@ async function openTopupDetail(id, name, img) {
   document.getElementById('wmCodesList').innerHTML = '<li style="color:var(--text-secondary);text-align:center;padding:20px">Загрузка позиций...</li>';
   document.getElementById('wataModal').classList.add('open');
   try {
-    const data = await fetchWata(`/topup/${id}`);
+    const data = await fetchWata(`/topup/games/${id}/products`);
     const items = data.positions || data.items || data.products || data.codes || (Array.isArray(data) ? data : [data]);
     if (!items.length) {
       document.getElementById('wmCodesList').innerHTML = '<li style="color:var(--text-secondary);text-align:center;padding:20px">Нет доступных позиций</li>';

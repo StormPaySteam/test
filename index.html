@@ -1209,18 +1209,61 @@ body {
   </div>
 </div>
 
-<!-- ══ WATA PRODUCT DETAIL MODAL ══ -->
+<!-- ══ WATA PURCHASE MODAL ══ -->
 <div class="modal-backdrop" id="wataModal">
-  <div class="modal">
+  <div class="modal" style="max-width:480px">
     <div class="modal-header">
-      <div class="modal-title" id="wmTitle"></div>
-      <button class="modal-close" id="wmClose">✕</button>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="wmHeaderImg"></div>
+        <div class="modal-title" id="wmTitle"></div>
+      </div>
+      <button class="modal-close" id="wmClose">&#x2715;</button>
     </div>
-    <div class="modal-body">
-      <div id="wmImgBlock"></div>
-      <div class="detail-desc" id="wmDesc"></div>
-      <ul class="product-codes-list" id="wmCodesList"></ul>
+    <div class="modal-body" id="wmBody">
+      <!-- STEP 1: select product -->
+      <div id="wmStep1">
+        <div id="wmImgBlock"></div>
+        <div class="detail-desc" id="wmDesc"></div>
+        <div id="wmFieldsBlock" style="display:none;margin-bottom:16px"></div>
+        <div class="form-group" style="margin-bottom:16px">
+          <label class="form-label">Email для получения чека</label>
+          <input class="form-input" id="wmEmail" type="email" placeholder="your@email.com">
+        </div>
+        <div style="font-size:13px;color:var(--text-tertiary);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Выберите номинал</div>
+        <ul class="product-codes-list" id="wmCodesList"></ul>
+      </div>
+      <!-- STEP 2: loading -->
+      <div id="wmStep2" style="display:none;text-align:center;padding:40px 0">
+        <div style="font-size:48px;margin-bottom:16px">&#x23F3;</div>
+        <div style="font-size:16px;color:var(--text-secondary)">&#1057;&#1086;&#1079;&#1076;&#1072;&#1105;&#1084; &#1079;&#1072;&#1082;&#1072;&#1079;...</div>
+      </div>
+      <!-- STEP 3: success -->
+      <div id="wmStep3" style="display:none;text-align:center;padding:20px 0">
+        <div style="font-size:48px;margin-bottom:12px">&#x2705;</div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:8px">&#1054;&#1087;&#1083;&#1072;&#1090;&#1072; &#1087;&#1088;&#1086;&#1096;&#1083;&#1072;!</div>
+        <div style="font-size:14px;color:var(--text-secondary);margin-bottom:20px">&#1042;&#1072;&#1096; &#1082;&#1086;&#1076;:</div>
+        <div id="wmCodeResult" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.2);border-radius:14px;padding:20px;font-size:20px;font-weight:700;letter-spacing:2px;font-family:monospace;word-break:break-all;margin-bottom:16px"></div>
+        <button class="btn-primary" onclick="copyWmCode()" style="width:100%">&#x1F4CB; &#1057;&#1082;&#1086;&#1087;&#1080;&#1088;&#1086;&#1074;&#1072;&#1090;&#1100; &#1082;&#1086;&#1076;</button>
+      </div>
+      <!-- STEP 4: error -->
+      <div id="wmStep4" style="display:none;text-align:center;padding:30px 0">
+        <div style="font-size:48px;margin-bottom:12px">&#x274C;</div>
+        <div style="font-size:16px;font-weight:700;margin-bottom:8px">&#1054;&#1096;&#1080;&#1073;&#1082;&#1072; &#1086;&#1087;&#1083;&#1072;&#1090;&#1099;</div>
+        <div id="wmErrorMsg" style="font-size:14px;color:var(--text-secondary);margin-bottom:20px"></div>
+        <button class="btn-secondary" onclick="resetWmModal()" style="width:100%">&#1055;&#1086;&#1087;&#1088;&#1086;&#1073;&#1086;&#1074;&#1072;&#1090;&#1100; &#1089;&#1085;&#1086;&#1074;&#1072;</button>
+      </div>
     </div>
+  </div>
+</div>
+
+<!-- ══ PAYMENT IFRAME MODAL ══ -->
+<div class="modal-backdrop" id="payModal" style="z-index:2000">
+  <div class="modal" style="max-width:520px;height:90vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
+    <div class="modal-header" style="padding:16px 20px;flex-shrink:0">
+      <div class="modal-title">&#1054;&#1087;&#1083;&#1072;&#1090;&#1072;</div>
+      <button class="modal-close" id="payClose">&#x2715;</button>
+    </div>
+    <iframe id="payIframe" src="" style="flex:1;border:none;width:100%"></iframe>
   </div>
 </div>
 
@@ -1267,13 +1310,11 @@ body {
 <script>
 const API_BASE = 'https://silent-lab-b3f5.divfurhfyg.workers.dev';
 const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJQdWJsaWNJZCI6IjNhMWMwZTFkLTM5ZjUtNzJkYy1mYzE4LTYxMDkwODlkYjc3NCIsIlRva2VuVmVyc2lvbiI6IjMiLCJleHAiOjE4MDc2MjU0MTUsImlzcyI6Imh0dHBzOi8vYXBpLndhdGEucHJvIiwiYXVkIjoiaHR0cHM6Ly9hcGkud2F0YS5wcm8vYXBpL2gyaCJ9.1cy6ksQb-IgF1OZMeE1siKnr7AVgU1NtLjddHRWhgiU';
-
 const headers = { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json' };
+const SITE_URL = 'https://theappbox.io';
 
 /* ─── STORAGE ─── */
-function loadCerts() {
-  try { return JSON.parse(localStorage.getItem('appbox_certs') || '[]'); } catch { return []; }
-}
+function loadCerts() { try { return JSON.parse(localStorage.getItem('appbox_certs') || '[]'); } catch { return []; } }
 function saveCerts(data) { localStorage.setItem('appbox_certs', JSON.stringify(data)); }
 function loadTos() { return localStorage.getItem('appbox_tos') || ''; }
 function saveTos(text) { localStorage.setItem('appbox_tos', text); }
@@ -1318,14 +1359,12 @@ function renderCerts() {
 function openCertDetail(c) {
   document.getElementById('cdTitle').textContent = c.name;
   document.getElementById('cdPrice').textContent = `${Number(c.price).toLocaleString('ru-RU')} ₽`;
-  document.getElementById('cdDesc').textContent = c.desc;
-  const iconBlock = document.getElementById('cdIconBlock');
-  const gradMap = { 'cert-grad-1':'linear-gradient(135deg,#0A84FF,#5AC8FA)', 'cert-grad-2':'linear-gradient(135deg,#BF5AF2,#FF375F)', 'cert-grad-3':'linear-gradient(135deg,#30D158,#5AC8FA)', 'cert-grad-4':'linear-gradient(135deg,#FF9F0A,#FF375F)', 'cert-grad-5':'linear-gradient(135deg,#FFD60A,#FF9F0A)', 'cert-grad-6':'linear-gradient(135deg,#5E5CE6,#BF5AF2)' };
-  iconBlock.style.background = gradMap[c.grad] || gradMap['cert-grad-1'];
-  iconBlock.textContent = c.icon || '🎖️';
+  document.getElementById('cdDesc').textContent = c.desc || '';
+  document.getElementById('cdIconBlock').textContent = c.icon || '🎖️';
   const badge = document.getElementById('cdBadge');
-  badge.innerHTML = c.badge ? `<span style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:100px;padding:5px 14px;font-size:13px;font-weight:600;">${c.badge}</span>` : '';
-  document.getElementById('cdBuyBtn').href = 'https://theappbox.io';
+  badge.innerHTML = c.badge ? `<span class="cert-card-badge" style="position:static;background:rgba(10,132,255,0.25);border-color:rgba(10,132,255,0.4);color:var(--accent-blue)">${c.badge}</span>` : '';
+  const buyBtn = document.getElementById('cdBuyBtn');
+  buyBtn.href = 'https://theappbox.io';
   const descLink = document.getElementById('cdDescLink');
   const descLinkRow = document.getElementById('cdDescLinkRow');
   if (c.link) { descLink.href = c.link; descLinkRow.style.display = ''; }
@@ -1333,11 +1372,12 @@ function openCertDetail(c) {
   document.getElementById('certDetailModal').classList.add('open');
 }
 
-/* ─── ADD/EDIT CERT ─── */
+/* ─── CERT EDIT/DELETE ─── */
+let editId = null;
 function openAddCert() {
-  document.getElementById('certModalTitle').textContent = 'Добавить сертификат';
-  document.getElementById('editCertId').value = '';
-  ['certName','certDesc','certPrice','certBadge','certIcon','certLink'].forEach(id => document.getElementById(id).value = '');
+  editId = null;
+  document.getElementById('certModalTitle').textContent = 'Новый сертификат';
+  ['certName','certDesc','certPrice','certBadge','certLink'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('certIcon').value = '🎖️';
   document.getElementById('certGrad').value = 'cert-grad-1';
   document.getElementById('certModal').classList.add('open');
@@ -1347,11 +1387,11 @@ function editCert(id, e) {
   const certs = loadCerts();
   const c = certs.find(x => x.id === id);
   if (!c) return;
-  document.getElementById('certModalTitle').textContent = 'Редактировать сертификат';
-  document.getElementById('editCertId').value = id;
-  document.getElementById('certName').value = c.name;
-  document.getElementById('certDesc').value = c.desc;
-  document.getElementById('certPrice').value = c.price;
+  editId = id;
+  document.getElementById('certModalTitle').textContent = 'Редактировать';
+  document.getElementById('certName').value = c.name || '';
+  document.getElementById('certDesc').value = c.desc || '';
+  document.getElementById('certPrice').value = c.price || '';
   document.getElementById('certBadge').value = c.badge || '';
   document.getElementById('certIcon').value = c.icon || '🎖️';
   document.getElementById('certGrad').value = c.grad || 'cert-grad-1';
@@ -1360,21 +1400,17 @@ function editCert(id, e) {
 }
 function deleteCert(id, e) {
   e.stopPropagation();
-  if (!confirm('Удалить этот сертификат?')) return;
-  const certs = loadCerts().filter(x => x.id !== id);
-  saveCerts(certs);
+  if (!confirm('Удалить сертификат?')) return;
+  saveCerts(loadCerts().filter(c => c.id !== id));
   renderCerts();
 }
 document.getElementById('certSaveBtn').addEventListener('click', () => {
-  const name = document.getElementById('certName').value.trim();
-  if (!name) { alert('Укажите название'); return; }
-  const price = parseFloat(document.getElementById('certPrice').value) || 0;
-  const editId = document.getElementById('editCertId').value;
   let certs = loadCerts();
   const obj = {
-    id: editId || 'c' + Date.now(),
-    name, price,
+    id: editId || Date.now().toString(),
+    name: document.getElementById('certName').value.trim(),
     desc: document.getElementById('certDesc').value.trim(),
+    price: document.getElementById('certPrice').value.trim(),
     badge: document.getElementById('certBadge').value.trim(),
     icon: document.getElementById('certIcon').value.trim() || '🎖️',
     grad: document.getElementById('certGrad').value,
@@ -1387,37 +1423,40 @@ document.getElementById('certSaveBtn').addEventListener('click', () => {
   document.getElementById('certModal').classList.remove('open');
 });
 
-/* ─── MOCK DATA (fallback when API unavailable) ─── */
+/* ─── MOCK DATA ─── */
 const MOCK_VOUCHERS = [
-  { id: 'apple-500',   name: 'App Store & iTunes 500 ₽',   imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png',   minPrice: 549  },
-  { id: 'apple-1000',  name: 'App Store & iTunes 1000 ₽',  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png',  minPrice: 1099 },
-  { id: 'apple-1500',  name: 'App Store & iTunes 1500 ₽',  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png',  minPrice: 1649 },
-  { id: 'apple-2000',  name: 'App Store & iTunes 2000 ₽',  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png',  minPrice: 2199 },
-  { id: 'apple-3000',  name: 'App Store & iTunes 3000 ₽',  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png',  minPrice: 3299 },
-  { id: 'apple-5000',  name: 'App Store & iTunes 5000 ₽',  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png',  minPrice: 5499 },
-  { id: 'icloud-50',   name: 'iCloud+ 50 ГБ (1 месяц)',    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Apple_iCloud_logo.svg/120px-Apple_iCloud_logo.svg.png',         minPrice: 169  },
-  { id: 'icloud-200',  name: 'iCloud+ 200 ГБ (1 месяц)',   imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Apple_iCloud_logo.svg/120px-Apple_iCloud_logo.svg.png',         minPrice: 269  },
-  { id: 'icloud-2tb',  name: 'iCloud+ 2 ТБ (1 месяц)',     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Apple_iCloud_logo.svg/120px-Apple_iCloud_logo.svg.png',         minPrice: 899  },
+  { id: 'apple-500',  name: 'App Store & iTunes 500 ₽',  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png', minPrice: 549  },
+  { id: 'apple-1000', name: 'App Store & iTunes 1000 ₽', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png', minPrice: 1099 },
+  { id: 'apple-1500', name: 'App Store & iTunes 1500 ₽', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png', minPrice: 1649 },
+  { id: 'apple-2000', name: 'App Store & iTunes 2000 ₽', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png', minPrice: 2199 },
+  { id: 'apple-3000', name: 'App Store & iTunes 3000 ₽', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png', minPrice: 3299 },
+  { id: 'apple-5000', name: 'App Store & iTunes 5000 ₽', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png', minPrice: 5499 },
+  { id: 'icloud-50',  name: 'iCloud+ 50 ГБ (1 месяц)',  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Apple_iCloud_logo.svg/120px-Apple_iCloud_logo.svg.png', minPrice: 169  },
+  { id: 'icloud-200', name: 'iCloud+ 200 ГБ (1 месяц)', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Apple_iCloud_logo.svg/120px-Apple_iCloud_logo.svg.png', minPrice: 269  },
+  { id: 'icloud-2tb', name: 'iCloud+ 2 ТБ (1 месяц)',   imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Apple_iCloud_logo.svg/120px-Apple_iCloud_logo.svg.png', minPrice: 899  },
 ];
-
 const MOCK_TOPUP = [
-  { id: 'steam',      name: 'Steam',         imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/120px-Steam_icon_logo.svg.png',              category: 'Игровая платформа' },
-  { id: 'psn',        name: 'PlayStation',   imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Playstation_logo_colour.svg/120px-Playstation_logo_colour.svg.png', category: 'Консольные игры'  },
-  { id: 'xbox',       name: 'Xbox',          imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Xbox_one_logo.svg/120px-Xbox_one_logo.svg.png',                   category: 'Консольные игры'  },
-  { id: 'roblox',     name: 'Roblox',        imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Roblox_Logo_2022.svg/120px-Roblox_Logo_2022.svg.png',             category: 'Robux'            },
-  { id: 'minecraft',  name: 'Minecraft',     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Minecraft_cover.png/120px-Minecraft_cover.png',                  category: 'Игры'             },
-  { id: 'pubg',       name: 'PUBG Mobile',   imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/PUBG_Mobile_logo_2022.svg/120px-PUBG_Mobile_logo_2022.svg.png',   category: 'UC'               },
-  { id: 'genshin',    name: 'Genshin Impact',imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Genshin_Impact_Logo.svg/120px-Genshin_Impact_Logo.svg.png',       category: 'Genesis Crystals' },
-  { id: 'valorant',   name: 'Valorant',      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Valorant_logo_-_pink_color_version.svg/120px-Valorant_logo_-_pink_color_version.svg.png', category: 'VP' },
+  { id: 'steam',     name: 'Steam',          imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/120px-Steam_icon_logo.svg.png', category: 'Игровая платформа' },
+  { id: 'psn',       name: 'PlayStation',    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Playstation_logo_colour.svg/120px-Playstation_logo_colour.svg.png', category: 'Консольные игры' },
+  { id: 'xbox',      name: 'Xbox',           imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Xbox_one_logo.svg/120px-Xbox_one_logo.svg.png', category: 'Консольные игры' },
+  { id: 'roblox',    name: 'Roblox',         imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Roblox_Logo_2022.svg/120px-Roblox_Logo_2022.svg.png', category: 'Robux' },
+  { id: 'minecraft', name: 'Minecraft',      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Minecraft_cover.png/120px-Minecraft_cover.png', category: 'Игры' },
+  { id: 'pubg',      name: 'PUBG Mobile',    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/PUBG_Mobile_logo_2022.svg/120px-PUBG_Mobile_logo_2022.svg.png', category: 'UC' },
+  { id: 'genshin',   name: 'Genshin Impact', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Genshin_Impact_Logo.svg/120px-Genshin_Impact_Logo.svg.png', category: 'Genesis Crystals' },
+  { id: 'valorant',  name: 'Valorant',       imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Valorant_logo_-_pink_color_version.svg/120px-Valorant_logo_-_pink_color_version.svg.png', category: 'VP' },
 ];
 
-/* ─── WATA API ─── */
-async function fetchWata(endpoint) {
+/* ─── API FETCH ─── */
+async function fetchWata(endpoint, options = {}) {
   const res = await fetch(`${API_BASE}${endpoint}`, {
     headers,
-    signal: AbortSignal.timeout(8000)
+    signal: AbortSignal.timeout(15000),
+    ...options,
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`HTTP ${res.status}: ${body.substring(0, 120)}`);
+  }
   return res.json();
 }
 
@@ -1425,8 +1464,273 @@ function formatPrice(p) {
   if (!p && p !== 0) return '';
   return Number(p).toLocaleString('ru-RU') + ' ₽';
 }
+function genOrderId() {
+  return 'TAB-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+}
 
-/* ─── GIFT CARDS (Vouchers / AppStore filter) ─── */
+/* ══════════════════════════════════════════
+   PURCHASE MODAL STATE
+══════════════════════════════════════════ */
+let wmCurrentType = null;   // 'voucher' | 'topup'
+let wmCurrentItem = null;   // product/voucher item selected
+let wmCurrentOrder = null;  // orderId for polling
+let wmPollTimer = null;
+let wmFields = {};          // extra fields (e.g. User ID)
+
+function showWmStep(n) {
+  [1,2,3,4].forEach(i => document.getElementById('wmStep'+i).style.display = i===n ? '' : 'none');
+}
+
+function resetWmModal() {
+  showWmStep(1);
+  wmCurrentItem = null;
+  wmCurrentOrder = null;
+  if (wmPollTimer) { clearInterval(wmPollTimer); wmPollTimer = null; }
+}
+
+function copyWmCode() {
+  const code = document.getElementById('wmCodeResult').textContent;
+  navigator.clipboard.writeText(code).then(() => alert('Код скопирован!')).catch(() => {});
+}
+
+/* ─── VOUCHER DETAIL ─── */
+async function openVoucherDetail(id, name) {
+  document.getElementById('wmTitle').textContent = name;
+  document.getElementById('wmHeaderImg').innerHTML = '';
+  document.getElementById('wmImgBlock').innerHTML = '';
+  document.getElementById('wmDesc').textContent = '';
+  document.getElementById('wmFieldsBlock').style.display = 'none';
+  document.getElementById('wmFieldsBlock').innerHTML = '';
+  document.getElementById('wmEmail').value = '';
+  document.getElementById('wmCodesList').innerHTML = '<li style="color:var(--text-secondary);text-align:center;padding:20px">Загрузка...</li>';
+  document.getElementById('wataModal').classList.add('open');
+  resetWmModal();
+  wmCurrentType = 'voucher';
+  wmFields = {};
+
+  let vouchers = [];
+  try {
+    const data = await fetchWata(`/v3/vouchers/${id}`);
+    const items = data.vouchers || data.products || (Array.isArray(data) ? data : []);
+    vouchers = items.filter(v => v.isAvailable !== false);
+    if (data.details?.description) document.getElementById('wmDesc').textContent = data.details.description;
+  } catch(e) {
+    console.warn('Voucher API error:', e.message);
+  }
+
+  if (!vouchers.length) {
+    // fallback mock
+    const mock = { 'apple-500':549,'apple-1000':1099,'apple-1500':1649,'apple-2000':2199,'apple-3000':3299,'apple-5000':5499,'icloud-50':169,'icloud-200':269,'icloud-2tb':899 };
+    const p = mock[id];
+    vouchers = [{ id: id, name: name, minPrice: p, isAvailable: true }];
+  }
+
+  renderVoucherItems(vouchers);
+}
+
+function renderVoucherItems(vouchers) {
+  const ul = document.getElementById('wmCodesList');
+  ul.innerHTML = '';
+  vouchers.forEach(v => {
+    const li = document.createElement('li');
+    li.className = 'product-code-item';
+    li.style.cursor = 'pointer';
+    li.innerHTML = `
+      <div class="product-code-name">${v.name}</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        ${v.minPrice ? `<div class="product-code-price">${formatPrice(v.minPrice)}</div>` : ''}
+        <button class="btn-buy" style="padding:8px 14px;font-size:12px">Купить</button>
+      </div>`;
+    li.querySelector('.btn-buy').addEventListener('click', () => startVoucherPurchase(v));
+    ul.appendChild(li);
+  });
+}
+
+async function startVoucherPurchase(voucher) {
+  const email = document.getElementById('wmEmail').value.trim();
+  if (!email || !email.includes('@')) { alert('Введите корректный email'); return; }
+
+  wmCurrentItem = voucher;
+  showWmStep(2);
+
+  const orderId = genOrderId();
+  try {
+    const body = {
+      voucherId: parseInt(voucher.id) || voucher.id,
+      amount: voucher.minPrice,
+      count: 1,
+      orderId,
+      email,
+      description: `Покупка ${voucher.name}`,
+      successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
+      failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
+    };
+    const result = await fetchWata('/v3/vouchers', { method: 'POST', body: JSON.stringify(body) });
+    wmCurrentOrder = { orderId, type: 'voucher' };
+    openPaymentWindow(result.paymentLink, orderId, 'voucher');
+  } catch(e) {
+    document.getElementById('wmErrorMsg').textContent = e.message;
+    showWmStep(4);
+  }
+}
+
+/* ─── TOPUP DETAIL ─── */
+async function openTopupDetail(id, name, img) {
+  document.getElementById('wmTitle').textContent = name;
+  const hiEl = document.getElementById('wmHeaderImg');
+  hiEl.innerHTML = img ? `<img src="${img}" style="width:32px;height:32px;border-radius:8px;object-fit:contain;background:rgba(255,255,255,0.07);padding:4px">` : '';
+  document.getElementById('wmImgBlock').innerHTML = img
+    ? `<img src="${img}" style="width:70px;height:70px;border-radius:16px;object-fit:contain;background:rgba(255,255,255,0.07);padding:10px;display:block;margin:0 auto 16px">`
+    : '';
+  document.getElementById('wmDesc').textContent = '';
+  document.getElementById('wmFieldsBlock').style.display = 'none';
+  document.getElementById('wmFieldsBlock').innerHTML = '';
+  document.getElementById('wmEmail').value = '';
+  document.getElementById('wmCodesList').innerHTML = '<li style="color:var(--text-secondary);text-align:center;padding:20px">Загрузка...</li>';
+  document.getElementById('wataModal').classList.add('open');
+  resetWmModal();
+  wmCurrentType = 'topup';
+  wmFields = {};
+
+  let products = [];
+  let fields = [];
+  try {
+    const data = await fetchWata(`/v3/topup/${id}`);
+    products = (data.details?.products || data.products || []).filter(p => p.isAvailable !== false);
+    fields = data.details?.fields || [];
+    if (data.details?.categoryName) document.getElementById('wmTitle').textContent = data.details.categoryName;
+  } catch(e) {
+    console.warn('TopUp API error:', e.message);
+  }
+
+  // render extra fields (e.g. User ID, Server ID)
+  if (fields.length) {
+    const fb = document.getElementById('wmFieldsBlock');
+    fb.style.display = '';
+    fb.innerHTML = fields.map((f, idx) => {
+      const key = Object.keys(f).find(k => k !== 'Regex') || `Input${idx+1}`;
+      const label = f[key] || key;
+      return `<div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">${label}</label>
+        <input class="form-input" id="wmField_${key}" placeholder="${label}" data-key="${key}">
+      </div>`;
+    }).join('');
+  }
+
+  if (!products.length) {
+    document.getElementById('wmCodesList').innerHTML = '<li style="color:var(--text-secondary);text-align:center;padding:20px">Нет доступных позиций</li>';
+    return;
+  }
+  renderTopupItems(products, id);
+}
+
+function renderTopupItems(products, gameId) {
+  const ul = document.getElementById('wmCodesList');
+  ul.innerHTML = '';
+  products.forEach(p => {
+    const li = document.createElement('li');
+    li.className = 'product-code-item';
+    li.innerHTML = `
+      <div class="product-code-name">${p.name}</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        ${p.minPrice ? `<div class="product-code-price">${formatPrice(p.minPrice)}</div>` : ''}
+        <button class="btn-buy" style="padding:8px 14px;font-size:12px">Купить</button>
+      </div>`;
+    li.querySelector('.btn-buy').addEventListener('click', () => startTopupPurchase(p, gameId));
+    ul.appendChild(li);
+  });
+}
+
+async function startTopupPurchase(product, gameId) {
+  const email = document.getElementById('wmEmail').value.trim();
+  if (!email || !email.includes('@')) { alert('Введите корректный email'); return; }
+
+  // collect extra fields
+  const fieldInputs = document.querySelectorAll('#wmFieldsBlock input[data-key]');
+  const fieldsObj = {};
+  for (const inp of fieldInputs) {
+    if (!inp.value.trim()) { alert(`Заполните поле: ${inp.placeholder}`); return; }
+    fieldsObj[inp.dataset.key] = inp.value.trim();
+  }
+
+  wmCurrentItem = product;
+  showWmStep(2);
+
+  const orderId = genOrderId();
+  try {
+    const body = {
+      topupId: parseInt(product.id) || product.id,
+      amount: product.minPrice,
+      orderId,
+      fields: fieldsObj,
+      email,
+      description: `Пополнение: ${product.name}`,
+      successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
+      failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
+    };
+    const result = await fetchWata('/v3/topup', { method: 'POST', body: JSON.stringify(body) });
+    wmCurrentOrder = { orderId, type: 'topup' };
+    openPaymentWindow(result.paymentLink, orderId, 'topup');
+  } catch(e) {
+    document.getElementById('wmErrorMsg').textContent = e.message;
+    showWmStep(4);
+  }
+}
+
+/* ─── PAYMENT WINDOW ─── */
+function openPaymentWindow(paymentLink, orderId, type) {
+  // open in iframe modal
+  document.getElementById('payIframe').src = paymentLink;
+  document.getElementById('payModal').classList.add('open');
+  // start polling
+  startPolling(orderId, type);
+}
+
+document.getElementById('payClose').addEventListener('click', () => {
+  document.getElementById('payModal').classList.remove('open');
+  document.getElementById('payIframe').src = '';
+});
+
+/* ─── POLLING ─── */
+function startPolling(orderId, type) {
+  if (wmPollTimer) clearInterval(wmPollTimer);
+  let attempts = 0;
+  const maxAttempts = 60; // 5 min
+
+  wmPollTimer = setInterval(async () => {
+    attempts++;
+    if (attempts > maxAttempts) {
+      clearInterval(wmPollTimer);
+      return;
+    }
+    try {
+      const endpoint = type === 'voucher'
+        ? `/v3/vouchers/order/${orderId}`
+        : `/v3/topup/orders/${orderId}`;
+      const data = await fetchWata(endpoint);
+
+      if (data.status === 'Success') {
+        clearInterval(wmPollTimer);
+        document.getElementById('payModal').classList.remove('open');
+        document.getElementById('payIframe').src = '';
+        // show code
+        const codes = data.vouchers || [];
+        document.getElementById('wmCodeResult').textContent = codes.length ? codes.join(' | ') : 'Код будет отправлен на email';
+        showWmStep(3);
+      } else if (data.status === 'Fail') {
+        clearInterval(wmPollTimer);
+        document.getElementById('payModal').classList.remove('open');
+        document.getElementById('payIframe').src = '';
+        document.getElementById('wmErrorMsg').textContent = 'Платёж не прошёл. Попробуйте ещё раз.';
+        showWmStep(4);
+      }
+    } catch(e) {
+      console.warn('Poll error:', e.message);
+    }
+  }, 5000);
+}
+
+/* ─── GIFT CARDS (Vouchers) ─── */
 function renderVoucherCards(items, grid) {
   grid.innerHTML = '';
   items.forEach((s, i) => {
@@ -1437,11 +1741,11 @@ function renderVoucherCards(items, grid) {
     div.className = 'wata-card';
     div.style.animationDelay = `${i * 0.05}s`;
     div.innerHTML = `
-      ${img ? `<img class="wata-card-img" src="${img}" alt="${name}" onerror="this.parentNode.querySelector('.wata-card-img-placeholder').style.display='flex';this.style.display='none'">` : ''}
-      <div class="wata-card-img-placeholder" style="${img ? 'display:none' : ''}">&#x1F381;</div>
+      ${img ? `<img class="wata-card-img" src="${img}" alt="${name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}
+      <div class="wata-card-img-placeholder" style="${img ? 'display:none' : ''}">🎁</div>
       <div class="wata-card-body">
         <div class="wata-card-name">${name}</div>
-        <button class="btn-buy-sm" onclick="openVoucherDetail('${id}','${name.replace(/'/g,"\\'")}')">Выбрать номинал</button>
+        <button class="btn-buy-sm" onclick="openVoucherDetail('${id}','${name.replace(/'/g,"\'")}')">Выбрать номинал</button>
       </div>`;
     grid.appendChild(div);
   });
@@ -1451,7 +1755,7 @@ async function loadGiftCards() {
   const loading = document.getElementById('giftCardsLoading');
   const grid = document.getElementById('giftCardsGrid');
   try {
-    const data = await fetchWata('/v3/vouchers');
+    const data = await fetchWata('/v3/vouchers/services');
     const items = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
     const appleItems = items.filter(s => {
       const n = (s.name || s.title || '').toLowerCase();
@@ -1459,19 +1763,17 @@ async function loadGiftCards() {
     });
     const toRender = appleItems.length ? appleItems : items.slice(0, 12);
     if (!toRender.length) throw new Error('empty');
-    loading.style.display = 'none';
-    grid.style.display = 'grid';
+    loading.style.display = 'none'; grid.style.display = 'grid';
     renderVoucherCards(toRender, grid);
-  } catch (e) {
-    console.warn('Gift cards API unavailable, using mock data:', e.message);
-    loading.style.display = 'none';
-    grid.style.display = 'grid';
+  } catch(e) {
+    console.warn('Gift cards API unavailable, using mock:', e.message);
+    loading.style.display = 'none'; grid.style.display = 'grid';
     renderVoucherCards(MOCK_VOUCHERS, grid);
   }
 }
 
 /* ─── SERVICES (Games / TopUp) ─── */
-function renderServiceCards(items, grid, clickFn) {
+function renderServiceCards(items, grid) {
   grid.innerHTML = '';
   items.forEach((s, i) => {
     const id = s.id || s.gameId || s.serviceId;
@@ -1483,14 +1785,14 @@ function renderServiceCards(items, grid, clickFn) {
     div.style.animationDelay = `${i * 0.04}s`;
     div.innerHTML = `
       ${img
-        ? `<img class="wata-service-icon" src="${img}" alt="${name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="wata-service-icon-placeholder" style="display:none">&#x1F3AE;</div>`
-        : `<div class="wata-service-icon-placeholder">&#x1F3AE;</div>`}
+        ? `<img class="wata-service-icon" src="${img}" alt="${name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="wata-service-icon-placeholder" style="display:none">🎮</div>`
+        : `<div class="wata-service-icon-placeholder">🎮</div>`}
       <div class="wata-service-info">
         <div class="wata-service-name">${name}</div>
         ${sub ? `<div class="wata-service-sub">${String(sub).substring(0,60)}</div>` : ''}
       </div>
-      <div class="wata-service-arrow">&#x203A;</div>`;
-    div.addEventListener('click', () => clickFn(id, name, img, sub));
+      <div class="wata-service-arrow">›</div>`;
+    div.addEventListener('click', () => openTopupDetail(id, name, img));
     grid.appendChild(div);
   });
 }
@@ -1503,109 +1805,13 @@ async function loadServices() {
     const raw = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
     const items = raw.filter(s => s.isAvailable !== false);
     if (!items.length) throw new Error('empty');
-    loading.style.display = 'none';
-    grid.style.display = 'grid';
-    renderServiceCards(items.slice(0, 20), grid, openTopupDetail);
-  } catch (e) {
-    console.warn('Services API unavailable, using mock data:', e.message);
-    loading.style.display = 'none';
-    grid.style.display = 'grid';
-    renderServiceCards(MOCK_TOPUP, grid, (id, name, img) => openTopupDetail(id, name, img));
+    loading.style.display = 'none'; grid.style.display = 'grid';
+    renderServiceCards(items.slice(0, 20), grid);
+  } catch(e) {
+    console.warn('Services API unavailable, using mock:', e.message);
+    loading.style.display = 'none'; grid.style.display = 'grid';
+    renderServiceCards(MOCK_TOPUP, grid);
   }
-}
-
-/* ─── MOCK DETAIL DATA ─── */
-const MOCK_VOUCHER_DETAILS = {
-  'apple-500':  [{ name: '500 ₽',  minPrice: 549  }],
-  'apple-1000': [{ name: '1000 ₽', minPrice: 1099 }],
-  'apple-1500': [{ name: '1500 ₽', minPrice: 1649 }],
-  'apple-2000': [{ name: '2000 ₽', minPrice: 2199 }],
-  'apple-3000': [{ name: '3000 ₽', minPrice: 3299 }],
-  'apple-5000': [{ name: '5000 ₽', minPrice: 5499 }],
-  'icloud-50':  [{ name: '50 ГБ — 1 месяц', minPrice: 169 }],
-  'icloud-200': [{ name: '200 ГБ — 1 месяц', minPrice: 269 }],
-  'icloud-2tb': [{ name: '2 ТБ — 1 месяц', minPrice: 899 }],
-};
-const MOCK_TOPUP_DETAILS = {
-  'steam':     [{ name: '250 ₽',  minPrice: 275 }, { name: '500 ₽',  minPrice: 549 }, { name: '1000 ₽', minPrice: 1099 }, { name: '2000 ₽', minPrice: 2199 }],
-  'psn':       [{ name: '500 ₽',  minPrice: 549 }, { name: '1000 ₽', minPrice: 1099 }, { name: '2500 ₽', minPrice: 2749 }],
-  'xbox':      [{ name: '500 ₽',  minPrice: 549 }, { name: '1000 ₽', minPrice: 1099 }, { name: '2000 ₽', minPrice: 2199 }],
-  'roblox':    [{ name: '400 Robux',  minPrice: 349 }, { name: '800 Robux',  minPrice: 679 }, { name: '1700 Robux', minPrice: 1349 }],
-  'minecraft': [{ name: 'Minecraft Java Edition', minPrice: 1599 }],
-  'pubg':      [{ name: '60 UC',   minPrice: 109 }, { name: '325 UC',  minPrice: 549 }, { name: '660 UC',  minPrice: 1099 }],
-  'genshin':   [{ name: '60 Genesis Crystals', minPrice: 109 }, { name: '300+30', minPrice: 549 }, { name: '980+110', minPrice: 1799 }],
-  'valorant':  [{ name: '475 VP',  minPrice: 439 }, { name: '1000 VP', minPrice: 879 }, { name: '2050 VP', minPrice: 1749 }],
-};
-
-/* ─── VOUCHER DETAIL ─── */
-async function openVoucherDetail(id, name) {
-  document.getElementById('wmTitle').textContent = name;
-  document.getElementById('wmDesc').textContent = '';
-  document.getElementById('wmImgBlock').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-tertiary)">Загрузка...</div>';
-  document.getElementById('wmCodesList').innerHTML = '';
-  document.getElementById('wataModal').classList.add('open');
-
-  let codes = null;
-  try {
-    const data = await fetchWata(`/v3/vouchers/${id}`);
-    codes = Array.isArray(data) ? data : (data.products || data.vouchers || data.data || data.items || data.codes || data.result || []);
-  } catch { /* API недоступен */ }
-
-  // Fallback to mock
-  if (!codes || !codes.length) codes = MOCK_VOUCHER_DETAILS[id] || [{ name: 'Стандартный', minPrice: null }];
-
-  document.getElementById('wmImgBlock').innerHTML = '';
-  const ul = document.getElementById('wmCodesList');
-  ul.innerHTML = '';
-  codes.forEach(c => {
-    const codeName = c.name || c.title || c.denomination || `${c.amount || ''} ₽`;
-    const price = c.minPrice || c.price || c.salePrice || c.cost;
-    const li = document.createElement('li');
-    li.className = 'product-code-item';
-    li.innerHTML = `
-      <div class="product-code-name">${codeName}</div>
-      <div style="display:flex;align-items:center;gap:12px;">
-        ${price ? `<div class="product-code-price">${formatPrice(price)}</div>` : ''}
-        <a href="https://theappbox.io" target="_blank" class="btn-buy" onclick="event.stopPropagation()" style="padding:8px 14px;font-size:12px">Купить</a>
-      </div>`;
-    ul.appendChild(li);
-  });
-}
-
-/* ─── TOPUP DETAIL ─── */
-async function openTopupDetail(id, name, img) {
-  document.getElementById('wmTitle').textContent = name;
-  document.getElementById('wmImgBlock').innerHTML = img
-    ? `<img src="${img}" style="width:80px;height:80px;border-radius:18px;object-fit:contain;background:rgba(255,255,255,0.07);padding:10px;display:block;margin:0 auto 20px">`
-    : '<div style="text-align:center;font-size:50px;padding:10px 0 20px">&#x1F3AE;</div>';
-  document.getElementById('wmDesc').textContent = '';
-  document.getElementById('wmCodesList').innerHTML = '<li style="color:var(--text-secondary);text-align:center;padding:20px">Загрузка позиций...</li>';
-  document.getElementById('wataModal').classList.add('open');
-
-  let items = null;
-  try {
-    const data = await fetchWata(`/v3/topup/${id}`);
-    items = (data.details && data.details.products) || data.products || data.positions || data.items || (Array.isArray(data) ? data : []);
-  } catch { /* API недоступен */ }
-
-  // Fallback to mock
-  if (!items || !items.length) items = MOCK_TOPUP_DETAILS[id] || [{ name: 'Стандартный пакет', minPrice: null }];
-
-  const ul = document.getElementById('wmCodesList');
-  ul.innerHTML = '';
-  items.forEach(p => {
-    const pName = p.name || p.title || p.product || '';
-    const price = p.minPrice || p.price || p.salePrice || p.cost;
-    const li = document.createElement('li');
-    li.className = 'product-code-item';
-    li.innerHTML = `
-      <div class="product-code-name">${pName}</div>
-      <div style="display:flex;align-items:center;gap:12px;">
-        ${price ? `<div class="product-code-price">${formatPrice(price)}</div>` : ''}
-        <a href="https://theappbox.io" target="_blank" class="btn-buy" style="padding:8px 14px;font-size:12px">Купить</a>
-      </div>`;
-    ul.appendChild(li);
-  });
 }
 
 /* ─── MODAL CLOSE ─── */
@@ -1613,14 +1819,16 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 document.getElementById('certModalClose').onclick = () => closeModal('certModal');
 document.getElementById('certModalCancel').onclick = () => closeModal('certModal');
 document.getElementById('cdClose').onclick = () => closeModal('certDetailModal');
-document.getElementById('wmClose').onclick = () => closeModal('wataModal');
+document.getElementById('wmClose').onclick = () => {
+  closeModal('wataModal');
+  if (wmPollTimer) { clearInterval(wmPollTimer); wmPollTimer = null; }
+};
 document.querySelectorAll('.modal-backdrop').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
 });
 
 /* ─── ADMIN PANEL ─── */
 let logoClickCount = 0, logoClickTimer = null;
-
 function handleLogoClick(e) {
   if (e) e.preventDefault();
   logoClickCount++;
@@ -1628,38 +1836,22 @@ function handleLogoClick(e) {
   logoClickTimer = setTimeout(() => { logoClickCount = 0; }, 2000);
   if (logoClickCount >= 4) {
     logoClickCount = 0;
-    const pwd = prompt('\uD83D\uDD10 Введите пароль администратора:');
-    if (pwd === '1122') {
-      toggleAdmin();
-    } else if (pwd !== null) {
-      alert('\u274C Неверный пароль');
-    }
+    const pwd = prompt('🔐 Введите пароль администратора:');
+    if (pwd === '1122') { toggleAdmin(); }
+    else if (pwd !== null) { alert('❌ Неверный пароль'); }
   }
 }
-
-// Кнопка Панель — тоже через пароль
 document.getElementById('adminToggleBtn').addEventListener('click', (e) => {
   e.preventDefault();
-  const pwd = prompt('\uD83D\uDD10 Введите пароль администратора:');
-  if (pwd === '1122') {
-    toggleAdmin();
-  } else if (pwd !== null) {
-    alert('\u274C Неверный пароль');
-  }
+  const pwd = prompt('🔐 Введите пароль администратора:');
+  if (pwd === '1122') { toggleAdmin(); }
+  else if (pwd !== null) { alert('❌ Неверный пароль'); }
 });
-
-// Логотип — 4 клика
 const logoEl = document.getElementById('logoLink');
-if (logoEl) {
-  logoEl.addEventListener('click', handleLogoClick);
-  // на всякий случай также через onclick
-  logoEl.onclick = handleLogoClick;
-}
-
+if (logoEl) { logoEl.addEventListener('click', handleLogoClick); logoEl.onclick = handleLogoClick; }
 document.getElementById('adminClose').addEventListener('click', () => {
   document.getElementById('adminPanel').classList.remove('open');
 });
-
 function toggleAdmin() {
   const panel = document.getElementById('adminPanel');
   const isOpen = panel.classList.toggle('open');
@@ -1669,7 +1861,6 @@ function toggleAdmin() {
     document.getElementById('adminTosText').value = loadTos();
   }
 }
-
 document.getElementById('saveTosBtn').addEventListener('click', () => {
   const text = document.getElementById('adminTosText').value.trim();
   saveTos(text);
@@ -1678,45 +1869,31 @@ document.getElementById('saveTosBtn').addEventListener('click', () => {
   document.getElementById('saveTosBtn').textContent = '✅ Сохранено';
   setTimeout(() => document.getElementById('saveTosBtn').textContent = '💾 Сохранить соглашение', 2000);
 });
-
 document.getElementById('adminAddCertBtn').addEventListener('click', () => {
   document.getElementById('adminPanel').classList.remove('open');
   openAddCert();
 });
 document.getElementById('reloadApiBtn').addEventListener('click', () => {
-  loadGiftCards();
-  loadServices();
+  loadGiftCards(); loadServices();
   document.getElementById('reloadApiBtn').textContent = '⏳ Загрузка...';
   setTimeout(() => document.getElementById('reloadApiBtn').textContent = '🔄 Перезагрузить товары из API', 3000);
 });
-
 document.getElementById('testApiBtn').addEventListener('click', async () => {
   const diagEl = document.getElementById('apiDiagResult');
   diagEl.style.display = 'block';
   diagEl.textContent = '⏳ Проверка...';
   const results = [];
-  const endpoints = ['/v3/vouchers', '/v3/topup'];
-  const proxyLabels = ['прямой', 'corsproxy.io', 'allorigins.win'];
-  for (const ep of endpoints) {
-    const targetUrl = `${API_BASE}${ep}`;
-    let found = false;
-    for (let i = 0; i < CORS_PROXIES.length; i++) {
-      const url = CORS_PROXIES[i](targetUrl);
-      try {
-        const res = await fetch(url, { headers });
-        const text = await res.text();
-        results.push(`✅ ${ep} [${proxyLabels[i]}] → HTTP ${res.status}: ${text.substring(0, 80)}`);
-        found = true;
-        break;
-      } catch (e) {
-        results.push(`❌ ${ep} [${proxyLabels[i]}] → ${e.message}`);
-      }
+  for (const ep of ['/v3/vouchers/services', '/v3/topup']) {
+    try {
+      const res = await fetch(`${API_BASE}${ep}`, { headers, signal: AbortSignal.timeout(6000) });
+      const text = await res.text();
+      results.push(`✅ ${ep} → HTTP ${res.status}: ${text.substring(0, 80)}`);
+    } catch(e) {
+      results.push(`❌ ${ep} → ${e.message}`);
     }
-    if (!found) results.push(`⛔ ${ep} — все прокси недоступны`);
   }
   diagEl.textContent = results.join('\n\n');
 });
-
 document.getElementById('addCertBtn').addEventListener('click', openAddCert);
 
 /* ─── TOS INIT ─── */
@@ -1739,4 +1916,5 @@ loadGiftCards();
 loadServices();
 </script>
 </body>
+</html>
 </html>

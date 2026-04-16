@@ -1455,7 +1455,9 @@ async function fetchWata(endpoint, options = {}) {
   });
   if (!res.ok) {
     const body = await res.text().catch(() => '');
-    throw new Error(`HTTP ${res.status}: ${body.substring(0, 120)}`);
+    let msg = `Ошибка ${res.status}`;
+    try { const j = JSON.parse(body); if (j.errors) { const errs = Object.values(j.errors).flat(); if (errs.length) msg = errs.join("; "); } else if (j.title) { msg = j.title; } else if (j.message) { msg = j.message; } } catch {} 
+    throw new Error(msg);
   }
   return res.json();
 }
@@ -1555,15 +1557,13 @@ async function startVoucherPurchase(voucher) {
 
   const orderId = genOrderId();
   try {
+    const vId = voucher.serviceId || voucher.id;
     const body = {
-      voucherId: parseInt(voucher.id) || voucher.id,
+      serviceId: vId,
       amount: voucher.minPrice,
       count: 1,
       orderId,
       email,
-      description: `Покупка ${voucher.name}`,
-      successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
-      failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
     };
     const result = await fetchWata('/v3/vouchers', { method: 'POST', body: JSON.stringify(body) });
     wmCurrentOrder = { orderId, type: 'voucher' };
@@ -1658,17 +1658,16 @@ async function startTopupPurchase(product, gameId) {
 
   const orderId = genOrderId();
   try {
+    const tId = product.serviceId || product.id;
     const body = {
-      topupId: parseInt(product.id) || product.id,
+      serviceId: tId,
+      productId: product.productId || product.id,
       amount: product.minPrice,
       orderId,
       fields: fieldsObj,
       email,
-      description: `Пополнение: ${product.name}`,
-      successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
-      failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
     };
-    const result = await fetchWata('/v3/topup', { method: 'POST', body: JSON.stringify(body) });
+    const result = await fetchWata('/v3/topup/orders', { method: 'POST', body: JSON.stringify(body) });
     wmCurrentOrder = { orderId, type: 'topup' };
     openPaymentWindow(result.paymentLink, orderId, 'topup');
   } catch(e) {

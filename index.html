@@ -1557,13 +1557,15 @@ async function startVoucherPurchase(voucher) {
 
   const orderId = genOrderId();
   try {
-    const vId = voucher.serviceId || voucher.id;
     const body = {
-      serviceId: vId,
+      voucherId: voucher.id,
       amount: voucher.minPrice,
       count: 1,
       orderId,
       email,
+      description: `Покупка ${voucher.name}`,
+      successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
+      failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
     };
     const result = await fetchWata('/v3/vouchers', { method: 'POST', body: JSON.stringify(body) });
     wmCurrentOrder = { orderId, type: 'voucher' };
@@ -1658,16 +1660,17 @@ async function startTopupPurchase(product, gameId) {
 
   const orderId = genOrderId();
   try {
-    const tId = product.serviceId || product.id;
     const body = {
-      serviceId: tId,
-      productId: product.productId || product.id,
+      topupId: product.id,
       amount: product.minPrice,
       orderId,
       fields: fieldsObj,
       email,
+      description: `Пополнение: ${product.name}`,
+      successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
+      failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
     };
-    const result = await fetchWata('/v3/topup/orders', { method: 'POST', body: JSON.stringify(body) });
+    const result = await fetchWata('/v3/topup', { method: 'POST', body: JSON.stringify(body) });
     wmCurrentOrder = { orderId, type: 'topup' };
     openPaymentWindow(result.paymentLink, orderId, 'topup');
   } catch(e) {

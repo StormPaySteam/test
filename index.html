@@ -1308,7 +1308,7 @@ body {
 </div>
 
 <script>
-const API_BASE = 'https://silent-lab-b3f5.divfurhfyg.workers.dev';
+const API_BASE = 'https://dg-api.wata.pro/api';
 const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJQdWJsaWNJZCI6IjNhMWMwZTFkLTM5ZjUtNzJkYy1mYzE4LTYxMDkwODlkYjc3NCIsIlRva2VuVmVyc2lvbiI6IjMiLCJleHAiOjE4MDc2MjU0MTUsImlzcyI6Imh0dHBzOi8vYXBpLndhdGEucHJvIiwiYXVkIjoiaHR0cHM6Ly9hcGkud2F0YS5wcm8vYXBpL2gyaCJ9.1cy6ksQb-IgF1OZMeE1siKnr7AVgU1NtLjddHRWhgiU';
 const headers = { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json' };
 const SITE_URL = 'https://theappbox.io';
@@ -1456,27 +1456,18 @@ async function fetchWata(endpoint, options = {}) {
     headers: mergedHeaders,
   });
   if (!res.ok) {
-    const body = await res.text().catch(() => '');
+    const bodyText = await res.text().catch(() => '');
     let msg = `Ошибка ${res.status}`;
     try {
-      const j = JSON.parse(body);
+      const j = JSON.parse(bodyText);
       if (j.errors) {
         const errs = Object.values(j.errors).flat();
         if (errs.length) msg = errs.join('; ');
-      } else if (j.title && j.errors) {
-        msg = j.title + ': ' + Object.values(j.errors).flat().join('; ');
-      } else if (j.title) {
-        msg = j.title;
-      } else if (j.message) {
-        msg = j.message;
-      } else if (j.detail) {
-        msg = j.detail;
-      } else {
-        msg = `Ошибка ${res.status}: ${body.substring(0, 200)}`;
-      }
-    } catch {
-      msg = `Ошибка ${res.status}: ${body.substring(0, 200)}`;
-    }
+      } else if (j.title) { msg = j.title; }
+      else if (j.message) { msg = j.message; }
+      else if (j.detail) { msg = j.detail; }
+      else { msg = `Ошибка ${res.status}: ${bodyText.substring(0, 200)}`; }
+    } catch { msg = `Ошибка ${res.status}: ${bodyText.substring(0, 200)}`; }
     throw new Error(msg);
   }
   return res.json();

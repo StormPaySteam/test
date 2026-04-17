@@ -1298,7 +1298,8 @@ body {
       <div class="admin-section-title">Данные API</div>
       <button class="btn-secondary" id="reloadApiBtn" style="width:100%;font-size:13px;padding:10px;">🔄 Перезагрузить товары из API</button>
       <button class="btn-secondary" id="testApiBtn" style="width:100%;font-size:13px;padding:10px;margin-top:8px;">🔍 Диагностика API</button>
-      <div id="apiDiagResult" style="margin-top:10px;font-size:11px;color:var(--text-tertiary);font-family:'SF Mono','Fira Code',monospace;word-break:break-all;line-height:1.6;display:none;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:10px;padding:10px 14px;"></div>
+      <button class="btn-secondary" id="searchGamesBtn" style="width:100%;font-size:13px;padding:10px;margin-top:8px;">🎮 Найти ID игр (Minecraft, Roblox и др.)</button>
+      <div id="apiDiagResult" style="margin-top:10px;font-size:11px;color:var(--text-tertiary);font-family:'SF Mono','Fira Code',monospace;word-break:break-all;line-height:1.6;display:none;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:10px;padding:10px 14px;white-space:pre-wrap;max-height:400px;overflow-y:auto;"></div>
     </div>
 
     <div style="font-size:11px;color:var(--text-tertiary);text-align:center;margin-top:8px;">
@@ -1805,7 +1806,7 @@ function renderServiceCards(items, grid) {
         ${sub ? `<div class="wata-service-sub">${String(sub).substring(0,60)}</div>` : ''}
         ${isMock ? `<div class="wata-service-sub" style="color:#FF9F0A">⏳ Скоро доступно</div>` : ''}
       </div>
-      <div class="wata-service-arrow">›</div>`;
+      <div class="wata-service-arrow">${isMock ? '' : '›'}</div>`;
     if (!isMock) {
       div.addEventListener('click', () => openTopupDetail(id, name, img));
     }
@@ -1826,7 +1827,6 @@ async function loadServices() {
   } catch(e) {
     console.warn('Services API unavailable, using mock:', e.message);
     loading.style.display = 'none'; grid.style.display = 'grid';
-    // Mock items marked with isMock=true — click shows "unavailable" message
     renderServiceCards(MOCK_TOPUP.map(m => ({...m, isMock: true})), grid);
   }
 }
@@ -1910,6 +1910,27 @@ document.getElementById('testApiBtn').addEventListener('click', async () => {
     }
   }
   diagEl.textContent = results.join('\n\n');
+});
+
+document.getElementById('searchGamesBtn').addEventListener('click', async () => {
+  const diagEl = document.getElementById('apiDiagResult');
+  diagEl.style.display = 'block';
+  diagEl.textContent = '⏳ Загружаю список игр из WATA API...';
+  const keywords = ['minecraft', 'roblox', 'pubg', 'genshin', 'mobile legend', 'free fire', 'fortnite', 'valorant', 'steam', 'xbox', 'playstation'];
+  try {
+    const data = await fetchWata('/v3/topup');
+    const raw = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
+    // Show ALL games with their real IDs
+    const found = raw.filter(s => {
+      const n = (s.name || s.title || '').toLowerCase();
+      return keywords.some(k => n.includes(k));
+    });
+    const allList = raw.slice(0, 100).map(s => `ID: ${s.id || s.serviceId} | ${s.name || s.title}`).join('\n');
+    const foundList = found.map(s => `✅ ID: ${s.id || s.serviceId} | ${s.name || s.title}`).join('\n');
+    diagEl.textContent = `=== НАЙДЕННЫЕ ИГРЫ ===\n${foundList || 'Не найдено'}\n\n=== ВСЕ СЕРВИСЫ (первые 100) ===\n${allList}`;
+  } catch(e) {
+    diagEl.textContent = `❌ Ошибка: ${e.message}`;
+  }
 });
 document.getElementById('addCertBtn').addEventListener('click', openAddCert);
 

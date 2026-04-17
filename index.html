@@ -1448,16 +1448,35 @@ const MOCK_TOPUP = [
 
 /* ─── API FETCH ─── */
 async function fetchWata(endpoint, options = {}) {
-  const mergedHeaders = { ...headers, ...(options.headers || {}) };
+  const { headers: extraHeaders, ...restOptions } = options;
+  const mergedHeaders = { ...headers, ...(extraHeaders || {}) };
   const res = await fetch(`${API_BASE}${endpoint}`, {
     signal: AbortSignal.timeout(15000),
-    ...options,
+    ...restOptions,
     headers: mergedHeaders,
   });
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     let msg = `Ошибка ${res.status}`;
-    try { const j = JSON.parse(body); if (j.errors) { const errs = Object.values(j.errors).flat(); if (errs.length) msg = errs.join("; "); } else if (j.title) { msg = j.title; } else if (j.message) { msg = j.message; } } catch {} 
+    try {
+      const j = JSON.parse(body);
+      if (j.errors) {
+        const errs = Object.values(j.errors).flat();
+        if (errs.length) msg = errs.join('; ');
+      } else if (j.title && j.errors) {
+        msg = j.title + ': ' + Object.values(j.errors).flat().join('; ');
+      } else if (j.title) {
+        msg = j.title;
+      } else if (j.message) {
+        msg = j.message;
+      } else if (j.detail) {
+        msg = j.detail;
+      } else {
+        msg = `Ошибка ${res.status}: ${body.substring(0, 200)}`;
+      }
+    } catch {
+      msg = `Ошибка ${res.status}: ${body.substring(0, 200)}`;
+    }
     throw new Error(msg);
   }
   return res.json();
@@ -1559,8 +1578,8 @@ async function startVoucherPurchase(voucher) {
   const orderId = genOrderId();
   try {
     const body = {
-      voucherId: voucher.id,
-      amount: voucher.minPrice,
+      voucherId: Number(voucher.id),
+      amount: Number(voucher.minPrice),
       count: 1,
       orderId,
       email,
@@ -1568,7 +1587,7 @@ async function startVoucherPurchase(voucher) {
       successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
       failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
     };
-    const result = await fetchWata('/v3/vouchers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const result = await fetchWata('/v3/vouchers', { method: 'POST', body: JSON.stringify(body) });
     wmCurrentOrder = { orderId, type: 'voucher' };
     openPaymentWindow(result.paymentLink, orderId, 'voucher');
   } catch(e) {
@@ -1662,8 +1681,8 @@ async function startTopupPurchase(product, gameId) {
   const orderId = genOrderId();
   try {
     const body = {
-      topupId: product.id,
-      amount: product.minPrice,
+      topupId: Number(product.id),
+      amount: Number(product.minPrice),
       orderId,
       fields: fieldsObj,
       email,
@@ -1671,7 +1690,7 @@ async function startTopupPurchase(product, gameId) {
       successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
       failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
     };
-    const result = await fetchWata('/v3/topup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const result = await fetchWata('/v3/topup', { method: 'POST', body: JSON.stringify(body) });
     wmCurrentOrder = { orderId, type: 'topup' };
     openPaymentWindow(result.paymentLink, orderId, 'topup');
   } catch(e) {

@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+ 
 :root {
   --blur-sm: blur(12px) saturate(160%);
   --blur-md: blur(24px) saturate(180%);
@@ -33,7 +33,7 @@
   --radius-xl: 40px;
   --transition: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-
+ 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
   background: #000;
@@ -42,7 +42,7 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
-
+ 
 /* Animated Background */
 .bg-scene {
   position: fixed;
@@ -95,7 +95,7 @@ body {
   33% { transform: translate(40px, -30px) scale(1.05); }
   66% { transform: translate(-25px, 25px) scale(0.96); }
 }
-
+ 
 /* Noise texture overlay */
 .bg-noise {
   position: absolute;
@@ -104,7 +104,7 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-size: 200px 200px;
 }
-
+ 
 /* Layout */
 .content {
   position: relative;
@@ -113,7 +113,7 @@ body {
   margin: 0 auto;
   padding: 0 24px 120px;
 }
-
+ 
 /* Glass utility */
 .glass {
   background: var(--glass-light);
@@ -129,7 +129,7 @@ body {
   border: 1px solid var(--glass-border-strong);
   box-shadow: var(--glass-shadow);
 }
-
+ 
 /* ═══════════════════ NAVBAR ═══════════════════ */
 .navbar {
   position: sticky;
@@ -207,7 +207,7 @@ body {
 .nav-admin-btn:hover {
   background: rgba(10, 132, 255, 0.35);
 }
-
+ 
 /* ═══════════════════ HERO ═══════════════════ */
 .hero {
   text-align: center;
@@ -263,7 +263,7 @@ body {
   from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
+ 
 /* ═══════════════════ SECTION HEADERS ═══════════════════ */
 .section {
   margin-bottom: 80px;
@@ -316,7 +316,7 @@ body {
   transform: scale(1.03);
 }
 .btn-add svg { flex-shrink: 0; }
-
+ 
 /* ═══════════════════ CERTIFICATE CARDS ═══════════════════ */
 .cards-grid {
   display: grid;
@@ -448,7 +448,7 @@ body {
   color: #fff;
 }
 .btn-icon:hover { background: rgba(0,0,0,0.75); transform: scale(1.1); }
-
+ 
 /* Gradient variants for cert cards */
 .cert-grad-1 .cert-card-bg { background: linear-gradient(135deg, #0A84FF 0%, #5AC8FA 100%); }
 .cert-grad-2 .cert-card-bg { background: linear-gradient(135deg, #BF5AF2 0%, #FF375F 100%); }
@@ -456,7 +456,7 @@ body {
 .cert-grad-4 .cert-card-bg { background: linear-gradient(135deg, #FF9F0A 0%, #FF375F 100%); }
 .cert-grad-5 .cert-card-bg { background: linear-gradient(135deg, #FFD60A 0%, #FF9F0A 100%); }
 .cert-grad-6 .cert-card-bg { background: linear-gradient(135deg, #5E5CE6 0%, #BF5AF2 100%); }
-
+ 
 /* ═══════════════════ WATA PRODUCT CARDS ═══════════════════ */
 .wata-grid {
   display: grid;
@@ -588,7 +588,7 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 12px;
 }
-
+ 
 /* Loading state */
 .loading-grid {
   display: grid;
@@ -603,7 +603,7 @@ body {
 }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 .skeleton-card { height: 220px; }
-
+ 
 .error-box {
   background: rgba(255, 55, 95, 0.12);
   border: 1px solid rgba(255, 55, 95, 0.28);
@@ -613,14 +613,14 @@ body {
   color: #FF6B8A;
   font-size: 14px;
 }
-
+ 
 /* ═══════════════════ SECTION DIVIDER ═══════════════════ */
 .section-divider {
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
   margin: 20px 0 60px;
 }
-
+ 
 /* ═══════════════════ FOOTER ═══════════════════ */
 .footer {
   margin-top: 80px;
@@ -660,7 +660,7 @@ body {
   font-size: 13px;
   color: var(--text-tertiary);
 }
-
+ 
 /* ═══════════════════ MODALS ═══════════════════ */
 .modal-backdrop {
   position: fixed; inset: 0;
@@ -772,7 +772,7 @@ body {
 }
 .btn-secondary:hover { background: rgba(255,255,255,0.16); }
 .modal-actions { display: flex; gap: 10px; }
-
+ 
 /* Detail Modal */
 .detail-modal-img {
   width: 100%; height: 200px;
@@ -794,7 +794,7 @@ body {
 }
 .detail-price { font-size: 32px; font-weight: 700; letter-spacing: -0.8px; }
 .detail-desc { font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 24px; }
-
+ 
 /* ═══════════════════ ADMIN PANEL ═══════════════════ */
 .admin-panel {
   position: fixed;
@@ -886,7 +886,7 @@ body {
   margin-top: 10px;
 }
 .btn-admin-save:hover { opacity: 0.9; transform: scale(1.02); }
-
+ 
 /* ═══════════════════ TOS SECTION ═══════════════════ */
 .tos-card {
   background: var(--glass-light);
@@ -910,7 +910,7 @@ body {
   padding: 20px 0;
   font-style: italic;
 }
-
+ 
 /* ═══════════════════ TAB SWITCHER ═══════════════════ */
 .tab-bar {
   display: flex;
@@ -940,7 +940,7 @@ body {
   color: #fff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
 }
-
+ 
 /* ═══════════════════ PRODUCT DETAIL MODAL ═══════════════════ */
 .product-codes-list { list-style: none; }
 .product-code-item {
@@ -951,12 +951,12 @@ body {
 .product-code-item:last-child { border-bottom: none; }
 .product-code-name { font-size: 15px; font-weight: 500; }
 .product-code-price { font-size: 18px; font-weight: 700; }
-
+ 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
-
+ 
 /* Responsive */
 @media (max-width: 700px) {
   .footer-inner { grid-template-columns: 1fr; gap: 24px; }
@@ -966,14 +966,14 @@ body {
   .services-grid { grid-template-columns: 1fr; }
   .cards-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
 }
-
+ 
 /* Scroll reveal */
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
 .reveal.visible { opacity: 1; transform: translateY(0); }
 </style>
 </head>
 <body>
-
+ 
 <!-- ══ BACKGROUND ══ -->
 <div class="bg-scene">
   <div class="bg-gradient"></div>
@@ -983,7 +983,7 @@ body {
   <div class="bg-orb bg-orb-4"></div>
   <div class="bg-noise"></div>
 </div>
-
+ 
 <!-- ══ NAVBAR ══ -->
 <nav class="navbar">
   <div class="nav-inner">
@@ -1000,17 +1000,17 @@ body {
     <button class="nav-admin-btn" id="adminToggleBtn">⚙️ Панель</button>
   </div>
 </nav>
-
+ 
 <!-- ══ MAIN CONTENT ══ -->
 <div class="content">
-
+ 
   <!-- HERO -->
   <div class="hero">
     <div class="hero-badge"><span class="hero-badge-dot"></span>Apple Digital Goods</div>
     <h1>Цифровые товары<br>для вашего Apple ID</h1>
     <p>Сертификаты разработчика, подарочные карты App Store и подписки — быстро и безопасно</p>
   </div>
-
+ 
   <!-- ══ SECTION 1: CERTIFICATES ══ -->
   <section class="section reveal" id="certs">
     <div class="section-header">
@@ -1028,9 +1028,9 @@ body {
     </div>
     <div class="cards-grid" id="certGrid"></div>
   </section>
-
+ 
   <div class="section-divider"></div>
-
+ 
   <!-- ══ SECTION 2: GIFT CARDS ══ -->
   <section class="section reveal" id="giftcards">
     <div class="section-header">
@@ -1054,9 +1054,9 @@ body {
       <div class="wata-grid" id="giftCardsGrid" style="display:none"></div>
     </div>
   </section>
-
+ 
   <div class="section-divider"></div>
-
+ 
   <!-- ══ SECTION 3: SERVICES ══ -->
   <section class="section reveal" id="services">
     <div class="section-header">
@@ -1078,9 +1078,9 @@ body {
       <div class="services-grid" id="servicesGrid" style="display:none"></div>
     </div>
   </section>
-
+ 
   <div class="section-divider"></div>
-
+ 
   <!-- ══ SECTION 4: TOS ══ -->
   <section class="section reveal" id="tos">
     <div class="section-header">
@@ -1098,7 +1098,7 @@ body {
       </div>
     </div>
   </section>
-
+ 
   <!-- FOOTER -->
   <footer class="footer">
     <div class="footer-inner">
@@ -1128,7 +1128,7 @@ body {
     </div>
   </footer>
 </div>
-
+ 
 <!-- ══ CERT MODAL (Add/Edit) ══ -->
 <div class="modal-backdrop" id="certModal">
   <div class="modal">
@@ -1184,7 +1184,7 @@ body {
     </div>
   </div>
 </div>
-
+ 
 <!-- ══ CERT DETAIL MODAL ══ -->
 <div class="modal-backdrop" id="certDetailModal">
   <div class="modal">
@@ -1208,7 +1208,7 @@ body {
     </div>
   </div>
 </div>
-
+ 
 <!-- ══ WATA PURCHASE MODAL ══ -->
 <div class="modal-backdrop" id="wataModal">
   <div class="modal" style="max-width:480px">
@@ -1255,7 +1255,7 @@ body {
     </div>
   </div>
 </div>
-
+ 
 <!-- ══ PAYMENT IFRAME MODAL ══ -->
 <div class="modal-backdrop" id="payModal" style="z-index:2000">
   <div class="modal" style="max-width:520px;height:90vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
@@ -1266,7 +1266,7 @@ body {
     <iframe id="payIframe" src="" style="flex:1;border:none;width:100%"></iframe>
   </div>
 </div>
-
+ 
 <!-- ══ ADMIN PANEL ══ -->
 <div class="admin-panel" id="adminPanel">
   <div class="admin-sidebar">
@@ -1277,51 +1277,51 @@ body {
         <button class="modal-close" id="adminClose">✕</button>
       </div>
     </div>
-
+ 
     <div class="admin-section">
       <div class="admin-section-title">API Токен WATA</div>
       <div class="admin-token-display" id="tokenDisplay"></div>
     </div>
-
+ 
     <div class="admin-section">
       <div class="admin-section-title">Пользовательское соглашение</div>
       <textarea class="admin-tos-area" id="adminTosText" placeholder="Введите текст пользовательского соглашения...&#10;&#10;Используйте обычный текст, переносы строк сохраняются."></textarea>
       <button class="btn-admin-save" id="saveTosBtn">💾 Сохранить соглашение</button>
     </div>
-
+ 
     <div class="admin-section">
       <div class="admin-section-title">Управление сертификатами</div>
       <button class="btn-admin-save" id="adminAddCertBtn" style="background:linear-gradient(135deg,#0A84FF,#007AFF);color:#fff;margin-top:0">+ Добавить сертификат</button>
     </div>
-
+ 
     <div class="admin-section">
       <div class="admin-section-title">Данные API</div>
       <button class="btn-secondary" id="reloadApiBtn" style="width:100%;font-size:13px;padding:10px;">🔄 Перезагрузить товары из API</button>
       <button class="btn-secondary" id="testApiBtn" style="width:100%;font-size:13px;padding:10px;margin-top:8px;">🔍 Диагностика API</button>
       <div id="apiDiagResult" style="margin-top:10px;font-size:11px;color:var(--text-tertiary);font-family:'SF Mono','Fira Code',monospace;word-break:break-all;line-height:1.6;display:none;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:10px;padding:10px 14px;"></div>
     </div>
-
+ 
     <div style="font-size:11px;color:var(--text-tertiary);text-align:center;margin-top:8px;">
       Доступ: Ctrl+Shift+A · Клик по логотипу ×5
     </div>
   </div>
 </div>
-
+ 
 <script>
 const API_BASE = 'https://dg-api.wata.pro/api';
 const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJQdWJsaWNJZCI6IjNhMWMwZTFkLTM5ZjUtNzJkYy1mYzE4LTYxMDkwODlkYjc3NCIsIlRva2VuVmVyc2lvbiI6IjMiLCJleHAiOjE4MDc2MjU0MTUsImlzcyI6Imh0dHBzOi8vYXBpLndhdGEucHJvIiwiYXVkIjoiaHR0cHM6Ly9hcGkud2F0YS5wcm8vYXBpL2gyaCJ9.1cy6ksQb-IgF1OZMeE1siKnr7AVgU1NtLjddHRWhgiU';
 const headers = { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json' };
 const SITE_URL = 'https://theappbox.io';
-
+ 
 /* ─── STORAGE ─── */
 function loadCerts() { try { return JSON.parse(localStorage.getItem('appbox_certs') || '[]'); } catch { return []; } }
 function saveCerts(data) { localStorage.setItem('appbox_certs', JSON.stringify(data)); }
 function loadTos() { return localStorage.getItem('appbox_tos') || ''; }
 function saveTos(text) { localStorage.setItem('appbox_tos', text); }
-
+ 
 /* ─── DEFAULT CERTS ─── */
 const DEFAULT_CERTS = [];
-
+ 
 /* ─── RENDER CERTS ─── */
 function renderCerts() {
   const grid = document.getElementById('certGrid');
@@ -1354,7 +1354,7 @@ function renderCerts() {
     grid.appendChild(div);
   });
 }
-
+ 
 /* ─── CERT DETAIL ─── */
 function openCertDetail(c) {
   document.getElementById('cdTitle').textContent = c.name;
@@ -1371,7 +1371,7 @@ function openCertDetail(c) {
   else { descLinkRow.style.display = 'none'; }
   document.getElementById('certDetailModal').classList.add('open');
 }
-
+ 
 /* ─── CERT EDIT/DELETE ─── */
 let editId = null;
 function openAddCert() {
@@ -1422,7 +1422,7 @@ document.getElementById('certSaveBtn').addEventListener('click', () => {
   renderCerts();
   document.getElementById('certModal').classList.remove('open');
 });
-
+ 
 /* ─── MOCK DATA ─── */
 const MOCK_VOUCHERS = [
   { id: 'apple-500',  name: 'App Store & iTunes 500 ₽',  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png', minPrice: 549  },
@@ -1445,7 +1445,7 @@ const MOCK_TOPUP = [
   { id: 'genshin',   name: 'Genshin Impact', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Genshin_Impact_Logo.svg/120px-Genshin_Impact_Logo.svg.png', category: 'Genesis Crystals' },
   { id: 'valorant',  name: 'Valorant',       imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Valorant_logo_-_pink_color_version.svg/120px-Valorant_logo_-_pink_color_version.svg.png', category: 'VP' },
 ];
-
+ 
 /* ─── API FETCH ─── */
 async function fetchWata(endpoint, options = {}) {
   const { headers: extraHeaders, ...restOptions } = options;
@@ -1472,7 +1472,7 @@ async function fetchWata(endpoint, options = {}) {
   }
   return res.json();
 }
-
+ 
 function formatPrice(p) {
   if (!p && p !== 0) return '';
   return Number(p).toLocaleString('ru-RU') + ' ₽';
@@ -1480,7 +1480,7 @@ function formatPrice(p) {
 function genOrderId() {
   return 'TAB-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase();
 }
-
+ 
 /* ══════════════════════════════════════════
    PURCHASE MODAL STATE
 ══════════════════════════════════════════ */
@@ -1489,23 +1489,23 @@ let wmCurrentItem = null;   // product/voucher item selected
 let wmCurrentOrder = null;  // orderId for polling
 let wmPollTimer = null;
 let wmFields = {};          // extra fields (e.g. User ID)
-
+ 
 function showWmStep(n) {
   [1,2,3,4].forEach(i => document.getElementById('wmStep'+i).style.display = i===n ? '' : 'none');
 }
-
+ 
 function resetWmModal() {
   showWmStep(1);
   wmCurrentItem = null;
   wmCurrentOrder = null;
   if (wmPollTimer) { clearInterval(wmPollTimer); wmPollTimer = null; }
 }
-
+ 
 function copyWmCode() {
   const code = document.getElementById('wmCodeResult').textContent;
   navigator.clipboard.writeText(code).then(() => alert('Код скопирован!')).catch(() => {});
 }
-
+ 
 /* ─── VOUCHER DETAIL ─── */
 async function openVoucherDetail(id, name) {
   document.getElementById('wmTitle').textContent = name;
@@ -1520,7 +1520,7 @@ async function openVoucherDetail(id, name) {
   resetWmModal();
   wmCurrentType = 'voucher';
   wmFields = {};
-
+ 
   let vouchers = [];
   try {
     const data = await fetchWata(`/v3/vouchers/${id}`);
@@ -1530,17 +1530,17 @@ async function openVoucherDetail(id, name) {
   } catch(e) {
     console.warn('Voucher API error:', e.message);
   }
-
+ 
   if (!vouchers.length) {
     // fallback mock
     const mock = { 'apple-500':549,'apple-1000':1099,'apple-1500':1649,'apple-2000':2199,'apple-3000':3299,'apple-5000':5499,'icloud-50':169,'icloud-200':269,'icloud-2tb':899 };
     const p = mock[id];
     vouchers = [{ id: id, name: name, minPrice: p, isAvailable: true }];
   }
-
+ 
   renderVoucherItems(vouchers);
 }
-
+ 
 function renderVoucherItems(vouchers) {
   const ul = document.getElementById('wmCodesList');
   ul.innerHTML = '';
@@ -1558,14 +1558,14 @@ function renderVoucherItems(vouchers) {
     ul.appendChild(li);
   });
 }
-
+ 
 async function startVoucherPurchase(voucher) {
   const email = document.getElementById('wmEmail').value.trim();
   if (!email || !email.includes('@')) { alert('Введите корректный email'); return; }
-
+ 
   wmCurrentItem = voucher;
   showWmStep(2);
-
+ 
   const orderId = genOrderId();
   try {
     const body = {
@@ -1586,7 +1586,7 @@ async function startVoucherPurchase(voucher) {
     showWmStep(4);
   }
 }
-
+ 
 /* ─── TOPUP DETAIL ─── */
 async function openTopupDetail(id, name, img) {
   document.getElementById('wmTitle').textContent = name;
@@ -1604,7 +1604,7 @@ async function openTopupDetail(id, name, img) {
   resetWmModal();
   wmCurrentType = 'topup';
   wmFields = {};
-
+ 
   let products = [];
   let fields = [];
   try {
@@ -1615,7 +1615,7 @@ async function openTopupDetail(id, name, img) {
   } catch(e) {
     console.warn('TopUp API error:', e.message);
   }
-
+ 
   // render extra fields (e.g. User ID, Server ID)
   if (fields.length) {
     const fb = document.getElementById('wmFieldsBlock');
@@ -1629,14 +1629,14 @@ async function openTopupDetail(id, name, img) {
       </div>`;
     }).join('');
   }
-
+ 
   if (!products.length) {
     document.getElementById('wmCodesList').innerHTML = '<li style="color:var(--text-secondary);text-align:center;padding:20px">Нет доступных позиций</li>';
     return;
   }
   renderTopupItems(products, id);
 }
-
+ 
 function renderTopupItems(products, gameId) {
   const ul = document.getElementById('wmCodesList');
   ul.innerHTML = '';
@@ -1653,11 +1653,11 @@ function renderTopupItems(products, gameId) {
     ul.appendChild(li);
   });
 }
-
+ 
 async function startTopupPurchase(product, gameId) {
   const email = document.getElementById('wmEmail').value.trim();
   if (!email || !email.includes('@')) { alert('Введите корректный email'); return; }
-
+ 
   // collect extra fields
   const fieldInputs = document.querySelectorAll('#wmFieldsBlock input[data-key]');
   const fieldsObj = {};
@@ -1665,10 +1665,10 @@ async function startTopupPurchase(product, gameId) {
     if (!inp.value.trim()) { alert(`Заполните поле: ${inp.placeholder}`); return; }
     fieldsObj[inp.dataset.key] = inp.value.trim();
   }
-
+ 
   wmCurrentItem = product;
   showWmStep(2);
-
+ 
   const orderId = genOrderId();
   try {
     const body = {
@@ -1689,7 +1689,7 @@ async function startTopupPurchase(product, gameId) {
     showWmStep(4);
   }
 }
-
+ 
 /* ─── PAYMENT WINDOW ─── */
 function openPaymentWindow(paymentLink, orderId, type) {
   // open in iframe modal
@@ -1698,18 +1698,18 @@ function openPaymentWindow(paymentLink, orderId, type) {
   // start polling
   startPolling(orderId, type);
 }
-
+ 
 document.getElementById('payClose').addEventListener('click', () => {
   document.getElementById('payModal').classList.remove('open');
   document.getElementById('payIframe').src = '';
 });
-
+ 
 /* ─── POLLING ─── */
 function startPolling(orderId, type) {
   if (wmPollTimer) clearInterval(wmPollTimer);
   let attempts = 0;
   const maxAttempts = 60; // 5 min
-
+ 
   wmPollTimer = setInterval(async () => {
     attempts++;
     if (attempts > maxAttempts) {
@@ -1721,7 +1721,7 @@ function startPolling(orderId, type) {
         ? `/v3/vouchers/order/${orderId}`
         : `/v3/topup/orders/${orderId}`;
       const data = await fetchWata(endpoint);
-
+ 
       if (data.status === 'Success') {
         clearInterval(wmPollTimer);
         document.getElementById('payModal').classList.remove('open');
@@ -1742,7 +1742,7 @@ function startPolling(orderId, type) {
     }
   }, 5000);
 }
-
+ 
 /* ─── GIFT CARDS (Vouchers) ─── */
 function renderVoucherCards(items, grid) {
   grid.innerHTML = '';
@@ -1763,7 +1763,7 @@ function renderVoucherCards(items, grid) {
     grid.appendChild(div);
   });
 }
-
+ 
 async function loadGiftCards() {
   const loading = document.getElementById('giftCardsLoading');
   const grid = document.getElementById('giftCardsGrid');
@@ -1784,7 +1784,7 @@ async function loadGiftCards() {
     renderVoucherCards(MOCK_VOUCHERS, grid);
   }
 }
-
+ 
 /* ─── SERVICES (Games / TopUp) ─── */
 function renderServiceCards(items, grid) {
   grid.innerHTML = '';
@@ -1809,7 +1809,7 @@ function renderServiceCards(items, grid) {
     grid.appendChild(div);
   });
 }
-
+ 
 async function loadServices() {
   const loading = document.getElementById('servicesLoading');
   const grid = document.getElementById('servicesGrid');
@@ -1826,7 +1826,7 @@ async function loadServices() {
     renderServiceCards(MOCK_TOPUP, grid);
   }
 }
-
+ 
 /* ─── MODAL CLOSE ─── */
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 document.getElementById('certModalClose').onclick = () => closeModal('certModal');
@@ -1839,7 +1839,7 @@ document.getElementById('wmClose').onclick = () => {
 document.querySelectorAll('.modal-backdrop').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
 });
-
+ 
 /* ─── ADMIN PANEL ─── */
 let logoClickCount = 0, logoClickTimer = null;
 function handleLogoClick(e) {
@@ -1908,20 +1908,20 @@ document.getElementById('testApiBtn').addEventListener('click', async () => {
   diagEl.textContent = results.join('\n\n');
 });
 document.getElementById('addCertBtn').addEventListener('click', openAddCert);
-
+ 
 /* ─── TOS INIT ─── */
 function initTos() {
   const text = loadTos();
   const el = document.getElementById('tosContent');
   if (text) el.innerHTML = `<div class="tos-content">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
 }
-
+ 
 /* ─── SCROLL REVEAL ─── */
 const observer = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
 }, { threshold: 0.15 });
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
+ 
 /* ─── INIT ─── */
 initTos();
 renderCerts();

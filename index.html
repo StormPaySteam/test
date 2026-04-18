@@ -1914,20 +1914,48 @@ function getGameIcon(name) {
   return letterIcon(name);
 }
 
-// Fetch icon from iTunes Search API (async, updates img src after load)
+// Fetch icon from iTunes Search API — tries multiple countries, strips geo suffixes
 async function fetchIconFromItunes(name, imgEl) {
   const cacheKey = name.toLowerCase();
   if (_iconCache[cacheKey]) { imgEl.src = _iconCache[cacheKey]; return; }
-  try {
-    const query = encodeURIComponent(name);
-    const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=software&limit=1&country=us`, {signal: AbortSignal.timeout(4000)});
-    const data = await res.json();
-    if (data.results && data.results[0] && data.results[0].artworkUrl100) {
-      const icon = data.results[0].artworkUrl100.replace('100x100', '120x120');
-      _iconCache[cacheKey] = icon;
-      imgEl.src = icon;
-    }
-  } catch(e) { /* keep current icon */ }
+
+  // Strip common regional suffixes to get clean game name for search
+  const cleanName = name
+    .replace(/\s*\(malaysia\)/gi, '')
+    .replace(/\s*\(indonesia\)/gi, '')
+    .replace(/\s*\(singapore\)/gi, '')
+    .replace(/\s*\(global\)/gi, '')
+    .replace(/\s*\(asia\)/gi, '')
+    .replace(/\s*-\s*[A-Z]{2}$/gi, '')
+    .trim();
+
+  const query = encodeURIComponent(cleanName || name);
+
+  // Try multiple countries for better coverage
+  const countries = ['us', 'gb', 'sg'];
+  for (const country of countries) {
+    try {
+      const res = await fetch(
+        `https://itunes.apple.com/search?term=${query}&entity=software&limit=3&country=${country}`,
+        { signal: AbortSignal.timeout(5000) }
+      );
+      const data = await res.json();
+      if (data.results && data.results.length > 0) {
+        // Pick result with best name match
+        const best = data.results.find(r =>
+          r.trackName && r.trackName.toLowerCase().includes(cleanName.toLowerCase().split(' ')[0])
+        ) || data.results[0];
+        if (best && best.artworkUrl100) {
+          const icon = best.artworkUrl100
+            .replace('100x100bb', '200x200bb')
+            .replace('/100x100/', '/200x200/');
+          _iconCache[cacheKey] = icon;
+          imgEl.src = icon;
+          return;
+        }
+      }
+    } catch(e) { /* try next country */ }
+  }
 }
 
 
@@ -2382,9 +2410,10 @@ function renderServiceCards(items, grid) {
   items.forEach((s, i) => {
     const id = s.id || s.gameId || s.serviceId;
     const name = s.name || s.title || 'Сервис';
-    const imgSrc = extractImg(s) || getGameIcon(name);
-    const sub = s.category || s.description || s.platform || '';
     const isMock = !!s.isMock;
+
+    // Always start with best available icon — letter icon is last resort
+    const imgSrc = extractImg(s) || getGameIcon(name);
 
     const div = document.createElement('div');
     div.className = 'wata-service-card';
@@ -2395,9 +2424,13 @@ function renderServiceCards(items, grid) {
     iconEl.className = 'wata-service-icon';
     iconEl.alt = name;
     iconEl.src = imgSrc;
+
+    // ALWAYS fetch from iTunes proactively — covers API items with no image
+    fetchIconFromItunes(name, iconEl).catch(() => {});
+
     iconEl.onerror = function() {
       this.onerror = null;
-      // Try iTunes as last fallback
+      // On broken URL, try iTunes then emoji placeholder
       fetchIconFromItunes(name, this).catch(() => {
         const ph = document.createElement('div');
         ph.className = 'wata-service-icon-placeholder';
@@ -2405,8 +2438,6 @@ function renderServiceCards(items, grid) {
         this.replaceWith(ph);
       });
     };
-    // Also proactively fetch from iTunes if using letter icon
-    if (imgSrc.startsWith('data:')) { fetchIconFromItunes(name, iconEl); }
 
     const info = document.createElement('div');
     info.className = 'wata-service-info';
@@ -2414,6 +2445,8 @@ function renderServiceCards(items, grid) {
     nameEl.className = 'wata-service-name';
     nameEl.textContent = name;
     info.appendChild(nameEl);
+
+    const sub = s.category || s.description || s.platform || '';
     if (sub) {
       const subEl = document.createElement('div');
       subEl.className = 'wata-service-sub';
@@ -2437,7 +2470,8 @@ function renderServiceCards(items, grid) {
     div.appendChild(arrow);
 
     if (!isMock) {
-      div.addEventListener('click', () => openTopupDetail(id, name, imgSrc));
+      // Use live imgSrc ref — it may update async via iTunes
+      div.addEventListener('click', () => openTopupDetail(id, name, iconEl.src));
     }
     grid.appendChild(div);
   });
@@ -2451,12 +2485,10 @@ async function loadServices() {
     const data = await fetchWata('/v3/topup');
     const raw = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
     const items = raw.filter(s => s.isAvailable !== false);
-    if (raw.length > 0) console.log('[TheAppBox] ALL KEYS of first item:', Object.keys(raw[0]), JSON.stringify(raw[0]));
     if (!items.length) throw new Error('empty');
     loading.style.display = 'none'; grid.style.display = 'grid';
     renderServiceCards(items.slice(0, 30), grid);
   } catch(e) {
-    console.warn('Services API unavailable, using mock:', e.message);
     loading.style.display = 'none'; grid.style.display = 'grid';
     renderServiceCards(MOCK_TOPUP.map(m => ({...m, isMock: true})), grid);
   }

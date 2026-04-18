@@ -1756,10 +1756,11 @@ function startPolling(orderId, type) {
 /* ─── GIFT CARDS (Vouchers) ─── */
 function renderVoucherCards(items, grid) {
   grid.innerHTML = '';
+  if (items.length > 0) console.log('[TheAppBox] voucher sample:', JSON.stringify(items[0]));
   items.forEach((s, i) => {
     const id = s.id || s.serviceId;
     const name = s.name || s.title || 'Подарочная карта';
-    const img = s.imageUrl || s.image || s.logoUrl || s.logo || '';
+    const img = extractImg(s);
     const div = document.createElement('div');
     div.className = 'wata-card';
     div.style.animationDelay = `${i * 0.05}s`;
@@ -1796,12 +1797,37 @@ async function loadGiftCards() {
 }
 
 /* ─── SERVICES (Games / TopUp) ─── */
+function extractImg(s) {
+  const keys = ['imageUrl','image','logoUrl','logo','iconUrl','icon','coverUrl','cover',
+    'imgUrl','img','thumbnailUrl','thumbnail','pictureUrl','picture','photoUrl',
+    'photo','artworkUrl','artwork','iconImage','serviceImage','gameLogo'];
+  for (const k of keys) {
+    if (s[k] && typeof s[k] === 'string' && s[k].length > 4) return s[k];
+  }
+  for (const k of ['media','assets','images','image','icon','logo']) {
+    const v = s[k];
+    if (!v) continue;
+    if (typeof v === 'string' && v.startsWith('http')) return v;
+    if (typeof v === 'object' && !Array.isArray(v)) {
+      const u = v.url||v.src||v.href||v.imageUrl||v.original||v.full||v.large||v.medium||v.small||'';
+      if (u) return u;
+    }
+    if (Array.isArray(v) && v.length) {
+      const f = v[0];
+      if (typeof f === 'string') return f;
+      if (f) return f.url||f.src||f.href||'';
+    }
+  }
+  return '';
+}
+
 function renderServiceCards(items, grid) {
   grid.innerHTML = '';
+  if (items.length > 0) console.log('[TheAppBox] service sample:', JSON.stringify(items[0]));
   items.forEach((s, i) => {
     const id = s.id || s.gameId || s.serviceId;
     const name = s.name || s.title || 'Сервис';
-    const img = s.imageUrl || s.image || s.logoUrl || s.logo || '';
+    const img = extractImg(s);
     const sub = s.category || s.description || s.platform || '';
     const isMock = !!s.isMock;
     const div = document.createElement('div');
@@ -1832,6 +1858,7 @@ async function loadServices() {
     const data = await fetchWata('/v3/topup');
     const raw = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
     const items = raw.filter(s => s.isAvailable !== false);
+    if (raw.length > 0) console.log('[TheAppBox] ALL KEYS of first item:', Object.keys(raw[0]), JSON.stringify(raw[0]));
     if (!items.length) throw new Error('empty');
     loading.style.display = 'none'; grid.style.display = 'grid';
     renderServiceCards(items.slice(0, 30), grid);

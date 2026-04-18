@@ -1425,26 +1425,37 @@ document.getElementById('certSaveBtn').addEventListener('click', () => {
 });
 
 /* ─── MOCK DATA ─── */
+const APPSTORE_ICON = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='26' fill='%230D96F6'/%3E%3Cpath d='M60 18l8.5 14.7H51.5L60 18zm-22 38l-8.5 14.7H22L43 32.7l10 17.3zm44 0L93 32.7l21 38H91.5L82 56zm-4.5 8H42.5L33 80h54l-9.5-16zm-36.3 16L34 96h52l-9.2-16H41.2z' fill='white'/%3E%3C/svg%3E`;
+const ICLOUD_ICON = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 80'%3E%3Crect width='120' height='80' fill='%23147EFB'/%3E%3Cpath d='M90 52H36a16 16 0 010-32 16 16 0 0130-6 20 20 0 0124 22 12 12 0 010 16z' fill='white'/%3E%3C/svg%3E`;
+const STEAM_ICON = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='16' fill='%23171A21'/%3E%3Ccircle cx='60' cy='60' r='32' fill='none' stroke='%2366C0F4' stroke-width='8'/%3E%3Ccircle cx='60' cy='60' r='14' fill='%2366C0F4'/%3E%3C/svg%3E`;
+const PSN_ICON = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='16' fill='%23003087'/%3E%3Cpath d='M28 80V38l16 6v28l-16 8zm16-36l28-10c8-3 16 1 16 10v14c0 8-8 13-16 10L44 62V44zm28 0v14l-12-4V40l12 4zm-28 52l44-16v-8L44 88v8z' fill='white'/%3E%3C/svg%3E`;
+const XBOX_ICON = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='16' fill='%23107C10'/%3E%3Ccircle cx='60' cy='60' r='36' fill='none' stroke='white' stroke-width='4'/%3E%3Cpath d='M38 38c8 8 14 20 22 22s14-6 22-14M38 82c8-8 14-20 22-22s14 6 22 14' stroke='white' stroke-width='5' fill='none'/%3E%3C/svg%3E`;
+const ROBLOX_ICON = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' fill='%23E8002A'/%3E%3Crect x='28' y='28' width='64' height='64' rx='6' fill='white'/%3E%3Crect x='40' y='40' width='16' height='16' fill='%23E8002A'/%3E%3Crect x='64' y='40' width='16' height='16' fill='%23E8002A'/%3E%3Crect x='40' y='64' width='16' height='16' fill='%23E8002A'/%3E%3Crect x='64' y='64' width='16' height='16' fill='%23E8002A'/%3E%3C/svg%3E`;
+const MINECRAFT_ICON = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' fill='%236BA03D'/%3E%3Crect x='20' y='20' width='36' height='36' fill='%23854C27'/%3E%3Crect x='64' y='20' width='36' height='36' fill='%235B8B3E'/%3E%3Crect x='20' y='64' width='36' height='36' fill='%235B8B3E'/%3E%3Crect x='64' y='64' width='36' height='36' fill='%23854C27'/%3E%3C/svg%3E`;
+const PUBG_ICON = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='16' fill='%23F5A623'/%3E%3Ccircle cx='60' cy='50' r='20' fill='%23333'/%3E%3Crect x='30' y='74' width='60' height='12' rx='6' fill='%23333'/%3E%3Crect x='20' y='90' width='80' height='10' rx='5' fill='%23333'/%3E%3C/svg%3E`;
+const GENSHIN_ICON = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='16' fill='%234B6FA5'/%3E%3Cpath d='M60 20l10 28h28l-22 16 8 28-24-18-24 18 8-28-22-16h28z' fill='%23F0D080'/%3E%3C/svg%3E`;
+const VALORANT_ICON = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='16' fill='%23FF4655'/%3E%3Cpath d='M20 30l30 50h10L25 30H20zm75 0H85L50 80l5 10 40-60z' fill='white'/%3E%3C/svg%3E`;
+
 const MOCK_VOUCHERS = [
-  { id: 'apple-500',  name: 'App Store & iTunes 500 ₽',  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png', minPrice: 549  },
-  { id: 'apple-1000', name: 'App Store & iTunes 1000 ₽', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png', minPrice: 1099 },
-  { id: 'apple-1500', name: 'App Store & iTunes 1500 ₽', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png', minPrice: 1649 },
-  { id: 'apple-2000', name: 'App Store & iTunes 2000 ₽', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png', minPrice: 2199 },
-  { id: 'apple-3000', name: 'App Store & iTunes 3000 ₽', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png', minPrice: 3299 },
-  { id: 'apple-5000', name: 'App Store & iTunes 5000 ₽', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/App_Store_%28iOS%29.svg/120px-App_Store_%28iOS%29.svg.png', minPrice: 5499 },
-  { id: 'icloud-50',  name: 'iCloud+ 50 ГБ (1 месяц)',  imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Apple_iCloud_logo.svg/120px-Apple_iCloud_logo.svg.png', minPrice: 169  },
-  { id: 'icloud-200', name: 'iCloud+ 200 ГБ (1 месяц)', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Apple_iCloud_logo.svg/120px-Apple_iCloud_logo.svg.png', minPrice: 269  },
-  { id: 'icloud-2tb', name: 'iCloud+ 2 ТБ (1 месяц)',   imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Apple_iCloud_logo.svg/120px-Apple_iCloud_logo.svg.png', minPrice: 899  },
+  { id: 'apple-500',  name: 'App Store & iTunes 500 ₽',  imageUrl: APPSTORE_ICON, minPrice: 549  },
+  { id: 'apple-1000', name: 'App Store & iTunes 1000 ₽', imageUrl: APPSTORE_ICON, minPrice: 1099 },
+  { id: 'apple-1500', name: 'App Store & iTunes 1500 ₽', imageUrl: APPSTORE_ICON, minPrice: 1649 },
+  { id: 'apple-2000', name: 'App Store & iTunes 2000 ₽', imageUrl: APPSTORE_ICON, minPrice: 2199 },
+  { id: 'apple-3000', name: 'App Store & iTunes 3000 ₽', imageUrl: APPSTORE_ICON, minPrice: 3299 },
+  { id: 'apple-5000', name: 'App Store & iTunes 5000 ₽', imageUrl: APPSTORE_ICON, minPrice: 5499 },
+  { id: 'icloud-50',  name: 'iCloud+ 50 ГБ (1 месяц)',  imageUrl: ICLOUD_ICON, minPrice: 169  },
+  { id: 'icloud-200', name: 'iCloud+ 200 ГБ (1 месяц)', imageUrl: ICLOUD_ICON, minPrice: 269  },
+  { id: 'icloud-2tb', name: 'iCloud+ 2 ТБ (1 месяц)',   imageUrl: ICLOUD_ICON, minPrice: 899  },
 ];
 const MOCK_TOPUP = [
-  { id: 'steam',     name: 'Steam',          imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/120px-Steam_icon_logo.svg.png', category: 'Игровая платформа' },
-  { id: 'psn',       name: 'PlayStation',    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Playstation_logo_colour.svg/120px-Playstation_logo_colour.svg.png', category: 'Консольные игры' },
-  { id: 'xbox',      name: 'Xbox',           imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Xbox_one_logo.svg/120px-Xbox_one_logo.svg.png', category: 'Консольные игры' },
-  { id: 'roblox',    name: 'Roblox',         imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Roblox_Logo_2022.svg/120px-Roblox_Logo_2022.svg.png', category: 'Robux' },
-  { id: 'minecraft', name: 'Minecraft',      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Minecraft_cover.png/120px-Minecraft_cover.png', category: 'Игры' },
-  { id: 'pubg',      name: 'PUBG Mobile',    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/PUBG_Mobile_logo_2022.svg/120px-PUBG_Mobile_logo_2022.svg.png', category: 'UC' },
-  { id: 'genshin',   name: 'Genshin Impact', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Genshin_Impact_Logo.svg/120px-Genshin_Impact_Logo.svg.png', category: 'Genesis Crystals' },
-  { id: 'valorant',  name: 'Valorant',       imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Valorant_logo_-_pink_color_version.svg/120px-Valorant_logo_-_pink_color_version.svg.png', category: 'VP' },
+  { id: 'steam',     name: 'Steam',          imageUrl: STEAM_ICON,     category: 'Игровая платформа' },
+  { id: 'psn',       name: 'PlayStation',    imageUrl: PSN_ICON,       category: 'Консольные игры' },
+  { id: 'xbox',      name: 'Xbox',           imageUrl: XBOX_ICON,      category: 'Консольные игры' },
+  { id: 'roblox',    name: 'Roblox',         imageUrl: ROBLOX_ICON,    category: 'Robux' },
+  { id: 'minecraft', name: 'Minecraft',      imageUrl: MINECRAFT_ICON, category: 'Игры' },
+  { id: 'pubg',      name: 'PUBG Mobile',    imageUrl: PUBG_ICON,      category: 'UC' },
+  { id: 'genshin',   name: 'Genshin Impact', imageUrl: GENSHIN_ICON,   category: 'Genesis Crystals' },
+  { id: 'valorant',  name: 'Valorant',       imageUrl: VALORANT_ICON,  category: 'VP' },
 ];
 
 /* ─── API FETCH ─── */
@@ -1753,7 +1764,7 @@ function renderVoucherCards(items, grid) {
     div.className = 'wata-card';
     div.style.animationDelay = `${i * 0.05}s`;
     div.innerHTML = `
-      ${img ? `<img class="wata-card-img" src="${img}" alt="${name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}
+      ${img ? `<img class="wata-card-img" src="${img}" alt="${name}" onerror="this.onerror=null;this.style.display='none';this.insertAdjacentHTML('afterend','<div class=\\"wata-card-img-placeholder\\">🎁</div>')">` : ''}
       <div class="wata-card-img-placeholder" style="${img ? 'display:none' : ''}">🎁</div>
       <div class="wata-card-body">
         <div class="wata-card-name">${name}</div>
@@ -1799,7 +1810,7 @@ function renderServiceCards(items, grid) {
     if (isMock) div.style.opacity = '0.5';
     div.innerHTML = `
       ${img
-        ? `<img class="wata-service-icon" src="${img}" alt="${name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="wata-service-icon-placeholder" style="display:none">🎮</div>`
+        ? `<img class="wata-service-icon" src="${img}" alt="${name}" onerror="this.onerror=null;this.style.display='none';this.insertAdjacentHTML('afterend','<div class=\\"wata-service-icon-placeholder\\">🎮</div>')">`
         : `<div class="wata-service-icon-placeholder">🎮</div>`}
       <div class="wata-service-info">
         <div class="wata-service-name">${name}</div>

@@ -1590,8 +1590,21 @@ function copyWmCode() {
 /* ─── VOUCHER DETAIL ─── */
 async function openVoucherDetail(id, name) {
   document.getElementById('wmTitle').textContent = name;
-  document.getElementById('wmHeaderImg').innerHTML = '';
-  document.getElementById('wmImgBlock').innerHTML = '';
+  // Set icon in header and modal body using iTunes
+  const _vHiImg = document.createElement('img');
+  _vHiImg.style.cssText = 'width:32px;height:32px;border-radius:8px;object-fit:contain;background:rgba(255,255,255,0.07);padding:4px';
+  _vHiImg.src = getGameIcon(name);
+  fetchIconFromItunes(name, _vHiImg);
+  const _vHiEl = document.getElementById('wmHeaderImg');
+  _vHiEl.innerHTML = ''; _vHiEl.appendChild(_vHiImg);
+
+  const _vBigImg = document.createElement('img');
+  _vBigImg.style.cssText = 'width:80px;height:80px;border-radius:18px;object-fit:contain;background:rgba(255,255,255,0.07);padding:10px;display:block;margin:0 auto 16px;box-shadow:0 4px 20px rgba(0,0,0,0.3)';
+  _vBigImg.src = getGameIcon(name);
+  fetchIconFromItunes(name, _vBigImg);
+  const _vImgBlock = document.getElementById('wmImgBlock');
+  _vImgBlock.innerHTML = ''; _vImgBlock.appendChild(_vBigImg);
+
   document.getElementById('wmDesc').textContent = '';
   document.getElementById('wmFieldsBlock').style.display = 'none';
   document.getElementById('wmFieldsBlock').innerHTML = '';
@@ -1672,10 +1685,25 @@ async function startVoucherPurchase(voucher) {
 async function openTopupDetail(id, name, img) {
   document.getElementById('wmTitle').textContent = name;
   const hiEl = document.getElementById('wmHeaderImg');
-  hiEl.innerHTML = img ? `<img src="${img}" style="width:32px;height:32px;border-radius:8px;object-fit:contain;background:rgba(255,255,255,0.07);padding:4px">` : '';
-  document.getElementById('wmImgBlock').innerHTML = img
-    ? `<img src="${img}" style="width:70px;height:70px;border-radius:16px;object-fit:contain;background:rgba(255,255,255,0.07);padding:10px;display:block;margin:0 auto 16px">`
-    : '';
+
+  // Build header icon via DOM
+  const hiImg = document.createElement('img');
+  hiImg.style.cssText = 'width:32px;height:32px;border-radius:8px;object-fit:contain;background:rgba(255,255,255,0.07);padding:4px';
+  hiImg.src = img || getGameIcon(name);
+  hiImg.onerror = function() { this.onerror=null; fetchIconFromItunes(name, this); };
+  if (!img || img.startsWith('data:')) fetchIconFromItunes(name, hiImg);
+  hiEl.innerHTML = '';
+  hiEl.appendChild(hiImg);
+
+  // Build big modal icon via DOM
+  const bigImg = document.createElement('img');
+  bigImg.style.cssText = 'width:80px;height:80px;border-radius:18px;object-fit:contain;background:rgba(255,255,255,0.07);padding:10px;display:block;margin:0 auto 16px;box-shadow:0 4px 20px rgba(0,0,0,0.3)';
+  bigImg.src = img || getGameIcon(name);
+  bigImg.onerror = function() { this.onerror=null; fetchIconFromItunes(name, this); };
+  if (!img || img.startsWith('data:')) fetchIconFromItunes(name, bigImg);
+  const imgBlock = document.getElementById('wmImgBlock');
+  imgBlock.innerHTML = '';
+  imgBlock.appendChild(bigImg);
   document.getElementById('wmDesc').textContent = '';
   document.getElementById('wmFieldsBlock').style.display = 'none';
   document.getElementById('wmFieldsBlock').innerHTML = '';

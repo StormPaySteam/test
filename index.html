@@ -1424,49 +1424,76 @@ document.getElementById('certSaveBtn').addEventListener('click', () => {
   document.getElementById('certModal').classList.remove('open');
 });
 
-/* ─── GAME ICON MAP (by name keyword) ─── */
-const GAME_ICONS = {
-  // SVG data URIs for each game/service
-  'genshin':     `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%234B6FA5'/%3E%3Cpath d='M30 8l6 17h17l-14 10 5 17-14-10-14 10 5-17-14-10h17z' fill='%23F0D080'/%3E%3C/svg%3E`,
-  'honkai':      `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%23C0392B'/%3E%3Cpath d='M15 42V18l8 4v16l-8 4zm8-20l14-5c4-1 8 1 8 5v7c0 4-4 6-8 5l-14-5v-7zm14 0v7l-6-2V22l6 2zm-14 26l22-8v-4l-22 8v4z' fill='white'/%3E%3C/svg%3E`,
-  'zenless':     `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%23FF6B35'/%3E%3Crect x='12' y='12' width='15' height='15' rx='3' fill='white'/%3E%3Crect x='33' y='12' width='15' height='15' rx='3' fill='white' opacity='.6'/%3E%3Crect x='12' y='33' width='15' height='15' rx='3' fill='white' opacity='.6'/%3E%3Crect x='33' y='33' width='15' height='15' rx='3' fill='white'/%3E%3C/svg%3E`,
-  'love and':    `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%23E91E8C'/%3E%3Cpath d='M30 46l-16-16a11 11 0 0116-15 11 11 0 0116 15z' fill='white'/%3E%3C/svg%3E`,
-  'marvel':      `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%23E23636'/%3E%3Ctext x='30' y='38' text-anchor='middle' font-size='11' font-weight='bold' font-family='Arial' fill='white'%3EMARVEL%3C/text%3E%3C/svg%3E`,
-  'pubg':        `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%23F5A623'/%3E%3Ccircle cx='30' cy='24' r='10' fill='%23333'/%3E%3Crect x='14' y='36' width='32' height='6' rx='3' fill='%23333'/%3E%3Crect x='10' y='46' width='40' height='5' rx='2.5' fill='%23333'/%3E%3C/svg%3E`,
-  'mobile legend': `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%231A237E'/%3E%3Cpath d='M30 10l6 12 13 2-9 9 2 13-12-6-12 6 2-13-9-9 13-2z' fill='%23FFD700'/%3E%3C/svg%3E`,
-  'steam':       `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%23171A21'/%3E%3Ccircle cx='30' cy='30' r='16' fill='none' stroke='%2366C0F4' stroke-width='4'/%3E%3Ccircle cx='30' cy='30' r='7' fill='%2366C0F4'/%3E%3C/svg%3E`,
-  'playstation': `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%23003087'/%3E%3Cpath d='M14 40V19l8 3v14l-8 4zm8-18l14-5c4-1 8 0 8 5v7c0 4-4 6-8 5l-14-5v-7zm14 0v7l-6-2V22l6 2zm-14 26l22-8v-4l-22 8v4z' fill='white'/%3E%3C/svg%3E`,
-  'xbox':        `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%23107C10'/%3E%3Ccircle cx='30' cy='30' r='18' fill='none' stroke='white' stroke-width='2'/%3E%3Cpath d='M19 19c4 4 7 10 11 11s7-3 11-7M19 41c4-4 7-10 11-11s7 3 11 7' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E`,
-  'roblox':      `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' fill='%23E8002A'/%3E%3Crect x='14' y='14' width='32' height='32' rx='3' fill='white'/%3E%3Crect x='20' y='20' width='8' height='8' fill='%23E8002A'/%3E%3Crect x='32' y='20' width='8' height='8' fill='%23E8002A'/%3E%3Crect x='20' y='32' width='8' height='8' fill='%23E8002A'/%3E%3Crect x='32' y='32' width='8' height='8' fill='%23E8002A'/%3E%3C/svg%3E`,
-  'minecraft':   `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' fill='%236BA03D'/%3E%3Crect x='10' y='10' width='18' height='18' fill='%23854C27'/%3E%3Crect x='32' y='10' width='18' height='18' fill='%235B8B3E'/%3E%3Crect x='10' y='32' width='18' height='18' fill='%235B8B3E'/%3E%3Crect x='32' y='32' width='18' height='18' fill='%23854C27'/%3E%3C/svg%3E`,
-  'valorant':    `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%23FF4655'/%3E%3Cpath d='M10 15l15 25h5L13 15H10zm35 0H42L25 40l2 5 18-30z' fill='white'/%3E%3C/svg%3E`,
-  'apple':       `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%230D96F6'/%3E%3Cpath d='M30 9l4 7H26l4-7zm-11 19l-4 7H8l10-18 5 8zm22 0l5-8 10 18H54l-4-7zm-2 4H21L15 44h30l-6-12zm-17 8l-4 8h26l-5-8H22z' fill='white'/%3E%3C/svg%3E`,
-  'icloud':      `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%23147EFB'/%3E%3Cpath d='M45 38H18a10 10 0 010-20 10 10 0 0119-4 12 12 0 018 24z' fill='white'/%3E%3C/svg%3E`,
-  'fortnite':    `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%231C1C2E'/%3E%3Cpath d='M18 12h24v6H30v6h10v6H30v18h-6V12h-6z' fill='%23F7C948'/%3E%3C/svg%3E`,
-  'clash':       `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%231A6B3C'/%3E%3Cpath d='M30 10l4 10h10l-8 6 3 10-9-6-9 6 3-10-8-6h10z' fill='%23FFD700'/%3E%3C/svg%3E`,
-  'free fire':   `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%23FF6B00'/%3E%3Cpath d='M30 8c0 10-12 14-12 26a12 12 0 0024 0c0-12-12-16-12-26zm0 12c0 6 8 10 8 18a8 8 0 01-16 0c0-8 8-12 8-18z' fill='%23FFE000'/%3E%3C/svg%3E`,
-  'league':      `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%230BC4E3'/%3E%3Cpath d='M12 48V20l6-8h24l6 8v28H12zm6-4h24V22H18v22zm0-28h24l-3-4H21z' fill='%23C8AA6E'/%3E%3C/svg%3E`,
-  'brawl':       `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%2320124A'/%3E%3Ccircle cx='30' cy='25' r='10' fill='%23FFD700'/%3E%3Cpath d='M15 48c0-8 7-14 15-14s15 6 15 14H15z' fill='%23FFD700'/%3E%3C/svg%3E`,
-  'among':       `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%23C51111'/%3E%3Cellipse cx='30' cy='28' rx='14' ry='18' fill='%23C51111' stroke='white' stroke-width='3'/%3E%3Crect x='16' y='38' width='28' height='12' rx='6' fill='%23C51111' stroke='white' stroke-width='3'/%3E%3Crect x='22' y='18' width='16' height='8' rx='4' fill='%2399D9EA'/%3E%3C/svg%3E`,
-  'call of duty': `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%231A1A1A'/%3E%3Cpath d='M30 12l18 10v16L30 48 12 38V22z' fill='none' stroke='%23E8D000' stroke-width='3'/%3E%3Ctext x='30' y='33' text-anchor='middle' font-size='9' font-weight='bold' font-family='Arial' fill='%23E8D000'%3ECOD%3C/text%3E%3C/svg%3E`,
-  'arena of valor': `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%23004EBD'/%3E%3Cpath d='M30 10l6 12 13 2-9 9 2 13-12-6-12 6 2-13-9-9 13-2z' fill='%23FFD700'/%3E%3C/svg%3E`,
-  'telegram':    `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%2329B6F6'/%3E%3Cpath d='M8 30L52 12 36 50 28 36z' fill='white'/%3E%3Cpath d='M28 36l-8 8 2-14z' fill='%23ddd'/%3E%3C/svg%3E`,
-  'spotify':     `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%231DB954'/%3E%3Ccircle cx='30' cy='30' r='16' fill='none' stroke='white' stroke-width='3'/%3E%3Cpath d='M20 24c6-2 14-2 20 2M18 30c8-3 18-2 24 3M20 36c6-2 13-1 18 2' stroke='white' stroke-width='2.5' stroke-linecap='round' fill='none'/%3E%3C/svg%3E`,
-  'netflix':     `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%23E50914'/%3E%3Cpath d='M18 12h8l10 24V12h8v36h-8L26 24v24h-8z' fill='white'/%3E%3C/svg%3E`,
-  'youtube':     `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='%23FF0000'/%3E%3Crect x='10' y='18' width='40' height='24' rx='6' fill='white'/%3E%3Cpath d='M26 24l14 6-14 6z' fill='%23FF0000'/%3E%3C/svg%3E`,
+/* ─── GAME ICON CACHE + iTunes lookup ─── */
+const _iconCache = {};
+
+// Hardcoded reliable icons for common games (Google Play direct)
+const ICON_OVERRIDES = {
+  'genshin impact':    'https://play-lh.googleusercontent.com/So6VF6C99YGKFVF1L1B1tpnWM8oFCLSMd7vNvS3xJbRjKWw5DFaFAVlWnEp1MnmUg=s120',
+  'honkai: star rail': 'https://play-lh.googleusercontent.com/S1na1pFnHRyaZlXIGoYZKFpFvpWzKZAbxbZD_6-lVuWPyeJDwzMl3f3IFmkS8JhNHQ=s120',
+  'honkai star rail':  'https://play-lh.googleusercontent.com/S1na1pFnHRyaZlXIGoYZKFpFvpWzKZAbxbZD_6-lVuWPyeJDwzMl3f3IFmkS8JhNHQ=s120',
+  'zenless zone zero': 'https://play-lh.googleusercontent.com/3OqNRDRPpodDfqqfGS8FrPqJFVS_5oNV8FXZQ_8XMHyC5zOJEwLv-0b4Nay4FnBLOs=s120',
+  'love and deepspace':'https://play-lh.googleusercontent.com/O6QDNB3U4B7hqkKj9w2U5G1mOXeFYLwqF6RaYJHRN9HKe1mJrHCJVhm2pF6V3f-iYw=s120',
+  'mobile legends':    'https://play-lh.googleusercontent.com/GpBbSCM3L4TuWm6YKEqDiQVxlTRxXEJwSYRdRcbIBFWjZoNuCT4mX3L2q7OE-BhwNL8=s120',
+  'magic chess':       'https://play-lh.googleusercontent.com/GpBbSCM3L4TuWm6YKEqDiQVxlTRxXEJwSYRdRcbIBFWjZoNuCT4mX3L2q7OE-BhwNL8=s120',
+  'pubg mobile':       'https://play-lh.googleusercontent.com/JRd05pyBH41qjgsJuWduRJpDeZG0Uf9GTNvLRCkD6gI9Y9BNrAQSHiSmVLOkiD0Lg8A=s120',
+  'free fire':         'https://play-lh.googleusercontent.com/WWcMKzRVt35B9kEjGFR5cBLJqxHK0gT9z4IWjNW-_3JhR9bMBNFUE1jZPaLiGSM3dg=s120',
+  'valorant':          'https://play-lh.googleusercontent.com/qJJKFTKruwSnc5L5pRVMDhh9OXJbHa0iH4KosvhVBKjUkSFJJp2Ipp_8gE7PwGIlTA=s120',
+  'roblox':            'https://play-lh.googleusercontent.com/WRRMFYkFzMlcoM2X8LoMvO4FZtJLGTYAiXPSJD2XRvJnX5zCiJ4K9JXCiLFH_9DCAQ=s120',
+  'minecraft':         'https://play-lh.googleusercontent.com/VSwHMhKqEKEkhRU-c3WGTF4a7z4i4vHWPtJtKqNFtKxYQBf_mN4sn0Ys5mV3Iqm1Fg=s120',
+  'fortnite':          'https://play-lh.googleusercontent.com/cbp-m_NKLNjM0U3gT4f1RQIIGOzG7j7mKrxBUORPON5yC-6d8LGd4D0q77T_rVBCCg=s120',
+  'brawl stars':       'https://play-lh.googleusercontent.com/o9OM2pYPkMCO9mxBkFpBNjSjvCQfJbLZxYXIPkdMpKdGauI5WZoFkQpqxOkCnj-WA_I=s120',
+  'clash of clans':    'https://play-lh.googleusercontent.com/pAO2hkAUl-yFKJOVT0cYXwkKGXlWjKkMWCfZOlmLJ_S2vhyR6xHSdmhgBFWrYE9gRw=s120',
+  'clash royale':      'https://play-lh.googleusercontent.com/K3RA5gEsXG4h5FsJl8ZvPTuXZJaKE7e2SFTpxlVuFmfC3VJkYLIE7a6GiVlVLJe5EQ=s120',
+  'call of duty':      'https://play-lh.googleusercontent.com/Z_-5m9YGM7-NNoNRDGmkPdA4PDaXO_5sSJsVE2wUU6kVIWDH4GqGVQMKPjdTbCcLQA=s120',
+  'steam':             'https://store.steampowered.com/favicon.ico',
+  'playstation':       'https://www.playstation.com/favicon.ico',
+  'xbox':              'https://www.xbox.com/favicon.ico',
+  'spotify':           'https://open.spotify.com/favicon.ico',
+  'netflix':           'https://www.netflix.com/favicon.ico',
+  'youtube':           'https://www.youtube.com/favicon.ico',
+  'telegram':          'https://telegram.org/favicon.ico',
+  'apple':             'https://www.apple.com/favicon.ico',
+  'app store':         'https://www.apple.com/favicon.ico',
+  'itunes':            'https://www.apple.com/favicon.ico',
+  'icloud':            'https://www.icloud.com/favicon.ico',
+  'marvel':            'https://play-lh.googleusercontent.com/7lV8LMiHGaP8rPbf6aWUhOmqhvT3k3gFSXSBUGJWRMsXwRvT5MqGWKQn5SJJm7I9Gg=s120',
 };
 
-function getGameIcon(name) {
-  const n = (name || '').toLowerCase();
-  for (const [key, icon] of Object.entries(GAME_ICONS)) {
-    if (n.includes(key)) return icon;
-  }
-  // Default: colored icon with first letter
-  const colors = ['%230A84FF','%23BF5AF2','%2330D158','%23FF9F0A','%23FF375F','%235AC8FA','%23FFD60A','%235E5CE6'];
-  const color = colors[Math.abs(name.charCodeAt(0) + name.charCodeAt(1||0)) % colors.length];
-  const letter = encodeURIComponent(name.charAt(0).toUpperCase());
+function letterIcon(name) {
+  const colors = ['%230A84FF','%23BF5AF2','%2330D158','%23FF9F0A','%23FF375F','%235AC8FA','%235E5CE6','%23FF6B35'];
+  const color = colors[(name.charCodeAt(0) + (name.charCodeAt(1)||0)) % colors.length];
+  const letter = encodeURIComponent((name||'?').charAt(0).toUpperCase());
   return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='12' fill='${color}'/%3E%3Ctext x='30' y='40' text-anchor='middle' font-size='28' font-weight='bold' font-family='Arial' fill='white'%3E${letter}%3C/text%3E%3C/svg%3E`;
 }
+
+function getGameIcon(name) {
+  const n = (name || '').toLowerCase().trim();
+  // Exact match
+  if (ICON_OVERRIDES[n]) return ICON_OVERRIDES[n];
+  // Partial match
+  for (const [key, url] of Object.entries(ICON_OVERRIDES)) {
+    if (n.includes(key) || key.includes(n.split(' ').slice(0,2).join(' '))) return url;
+  }
+  return letterIcon(name);
+}
+
+// Fetch icon from iTunes Search API (async, updates img src after load)
+async function fetchIconFromItunes(name, imgEl) {
+  const cacheKey = name.toLowerCase();
+  if (_iconCache[cacheKey]) { imgEl.src = _iconCache[cacheKey]; return; }
+  try {
+    const query = encodeURIComponent(name);
+    const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=software&limit=1&country=us`, {signal: AbortSignal.timeout(4000)});
+    const data = await res.json();
+    if (data.results && data.results[0] && data.results[0].artworkUrl100) {
+      const icon = data.results[0].artworkUrl100.replace('100x100', '120x120');
+      _iconCache[cacheKey] = icon;
+      imgEl.src = icon;
+    }
+  } catch(e) { /* keep current icon */ }
+}
+
 
 /* ─── MOCK DATA ─── */
 const APPSTORE_ICON = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='26' fill='%230D96F6'/%3E%3Cpath d='M60 18l8.5 14.7H51.5L60 18zm-22 38l-8.5 14.7H22L43 32.7l10 17.3zm44 0L93 32.7l21 38H91.5L82 56zm-4.5 8H42.5L33 80h54l-9.5-16zm-36.3 16L34 96h52l-9.2-16H41.2z' fill='white'/%3E%3C/svg%3E`;
@@ -1906,11 +1933,16 @@ function renderServiceCards(items, grid) {
     iconEl.src = imgSrc;
     iconEl.onerror = function() {
       this.onerror = null;
-      const ph = document.createElement('div');
-      ph.className = 'wata-service-icon-placeholder';
-      ph.textContent = '🎮';
-      this.replaceWith(ph);
+      // Try iTunes as last fallback
+      fetchIconFromItunes(name, this).catch(() => {
+        const ph = document.createElement('div');
+        ph.className = 'wata-service-icon-placeholder';
+        ph.textContent = '🎮';
+        this.replaceWith(ph);
+      });
     };
+    // Also proactively fetch from iTunes if using letter icon
+    if (imgSrc.startsWith('data:')) { fetchIconFromItunes(name, iconEl); }
 
     const info = document.createElement('div');
     info.className = 'wata-service-info';

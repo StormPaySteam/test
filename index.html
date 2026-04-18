@@ -1800,24 +1800,45 @@ function startPolling(orderId, type) {
 /* ─── GIFT CARDS (Vouchers) ─── */
 function renderVoucherCards(items, grid) {
   grid.innerHTML = '';
-  if (items.length > 0) console.log('[TheAppBox] voucher sample:', JSON.stringify(items[0]));
   items.forEach((s, i) => {
     const id = s.id || s.serviceId;
     const name = s.name || s.title || 'Подарочная карта';
-    const img = extractImg(s) || getGameIcon(name);
+    const imgSrc = extractImg(s) || getGameIcon(name);
+
     const div = document.createElement('div');
     div.className = 'wata-card';
-    div.style.animationDelay = `${i * 0.05}s`;
-    div.innerHTML = `
-      ${img ? `<img class="wata-card-img" src="${img}" alt="${name}" onerror="this.onerror=null;this.style.display='none';this.insertAdjacentHTML('afterend','<div class=\\"wata-card-img-placeholder\\">🎁</div>')">` : ''}
-      <div class="wata-card-img-placeholder" style="${img ? 'display:none' : ''}">🎁</div>
-      <div class="wata-card-body">
-        <div class="wata-card-name">${name}</div>
-        <button class="btn-buy-sm" onclick="openVoucherDetail('${id}','${name.replace(/'/g,"\'")}')">Выбрать номинал</button>
-      </div>`;
+    div.style.animationDelay = (i * 0.05) + 's';
+
+    const imgEl = document.createElement('img');
+    imgEl.className = 'wata-card-img';
+    imgEl.alt = name;
+    imgEl.src = imgSrc;
+    imgEl.onerror = function() {
+      this.onerror = null;
+      const ph = document.createElement('div');
+      ph.className = 'wata-card-img-placeholder';
+      ph.textContent = '🎁';
+      this.replaceWith(ph);
+    };
+
+    const body = document.createElement('div');
+    body.className = 'wata-card-body';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'wata-card-name';
+    nameEl.textContent = name;
+    const btn = document.createElement('button');
+    btn.className = 'btn-buy-sm';
+    btn.textContent = 'Выбрать номинал';
+    btn.onclick = () => openVoucherDetail(id, name);
+    body.appendChild(nameEl);
+    body.appendChild(btn);
+
+    div.appendChild(imgEl);
+    div.appendChild(body);
     grid.appendChild(div);
   });
 }
+
 
 async function loadGiftCards() {
   const loading = document.getElementById('giftCardsLoading');
@@ -1867,33 +1888,65 @@ function extractImg(s) {
 
 function renderServiceCards(items, grid) {
   grid.innerHTML = '';
-  if (items.length > 0) console.log('[TheAppBox] service sample:', JSON.stringify(items[0]));
   items.forEach((s, i) => {
     const id = s.id || s.gameId || s.serviceId;
     const name = s.name || s.title || 'Сервис';
-    const img = extractImg(s) || getGameIcon(name);
+    const imgSrc = extractImg(s) || getGameIcon(name);
     const sub = s.category || s.description || s.platform || '';
     const isMock = !!s.isMock;
+
     const div = document.createElement('div');
     div.className = 'wata-service-card';
-    div.style.animationDelay = `${i * 0.04}s`;
+    div.style.animationDelay = (i * 0.04) + 's';
     if (isMock) div.style.opacity = '0.5';
-    div.innerHTML = `
-      ${img
-        ? `<img class="wata-service-icon" src="${img}" alt="${name}" onerror="this.onerror=null;this.style.display='none';this.insertAdjacentHTML('afterend','<div class=\\"wata-service-icon-placeholder\\">🎮</div>')">`
-        : `<div class="wata-service-icon-placeholder">🎮</div>`}
-      <div class="wata-service-info">
-        <div class="wata-service-name">${name}</div>
-        ${sub ? `<div class="wata-service-sub">${String(sub).substring(0,60)}</div>` : ''}
-        ${isMock ? `<div class="wata-service-sub" style="color:#FF9F0A">⏳ Скоро доступно</div>` : ''}
-      </div>
-      <div class="wata-service-arrow">${isMock ? '' : '›'}</div>`;
+
+    const iconEl = document.createElement('img');
+    iconEl.className = 'wata-service-icon';
+    iconEl.alt = name;
+    iconEl.src = imgSrc;
+    iconEl.onerror = function() {
+      this.onerror = null;
+      const ph = document.createElement('div');
+      ph.className = 'wata-service-icon-placeholder';
+      ph.textContent = '🎮';
+      this.replaceWith(ph);
+    };
+
+    const info = document.createElement('div');
+    info.className = 'wata-service-info';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'wata-service-name';
+    nameEl.textContent = name;
+    info.appendChild(nameEl);
+    if (sub) {
+      const subEl = document.createElement('div');
+      subEl.className = 'wata-service-sub';
+      subEl.textContent = String(sub).substring(0, 60);
+      info.appendChild(subEl);
+    }
+    if (isMock) {
+      const mockEl = document.createElement('div');
+      mockEl.className = 'wata-service-sub';
+      mockEl.style.color = '#FF9F0A';
+      mockEl.textContent = '⏳ Скоро доступно';
+      info.appendChild(mockEl);
+    }
+
+    const arrow = document.createElement('div');
+    arrow.className = 'wata-service-arrow';
+    arrow.textContent = isMock ? '' : '›';
+
+    div.appendChild(iconEl);
+    div.appendChild(info);
+    div.appendChild(arrow);
+
     if (!isMock) {
-      div.addEventListener('click', () => openTopupDetail(id, name, img));
+      div.addEventListener('click', () => openTopupDetail(id, name, imgSrc));
     }
     grid.appendChild(div);
   });
 }
+
 
 async function loadServices() {
   const loading = document.getElementById('servicesLoading');

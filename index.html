@@ -911,6 +911,151 @@ body {
   font-style: italic;
 }
 
+/* ═══════════════════ LEGAL DOCS ═══════════════════ */
+.legal-tab-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 6px;
+  width: fit-content;
+}
+.legal-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: calc(var(--radius-md) - 4px);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: inherit;
+}
+.legal-tab:hover { color: var(--text); background: rgba(255,255,255,0.07); }
+.legal-tab.active {
+  background: rgba(255,255,255,0.14);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.18);
+}
+.legal-tab-icon { font-size: 16px; }
+
+.legal-panel {
+  background: var(--glass-light);
+  backdrop-filter: var(--blur-md);
+  -webkit-backdrop-filter: var(--blur-md);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.legal-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 36px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+}
+.legal-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.2px;
+}
+.legal-date {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.legal-body {
+  padding: 36px 40px;
+  max-height: 620px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+.legal-body::-webkit-scrollbar { width: 4px; }
+.legal-body::-webkit-scrollbar-track { background: transparent; }
+.legal-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+
+.legal-section { margin-bottom: 32px; }
+.legal-section:last-of-type { margin-bottom: 0; }
+
+.legal-heading {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.2px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.legal-heading::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 15px;
+  background: var(--accent-blue);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legal-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: legal-counter;
+}
+.legal-list li {
+  counter-increment: legal-counter;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.75;
+  padding: 6px 0 6px 28px;
+  position: relative;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.legal-list li:last-child { border-bottom: none; }
+.legal-list li::before {
+  content: counter(legal-counter) ".";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  min-width: 20px;
+}
+
+.legal-notice {
+  margin-top: 28px;
+  padding: 18px 22px;
+  background: rgba(10,132,255,0.10);
+  border: 1px solid rgba(10,132,255,0.25);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.65;
+  font-weight: 500;
+}
+
+@media (max-width: 600px) {
+  .legal-tab-bar { width: 100%; }
+  .legal-tab { flex: 1; justify-content: center; padding: 10px 12px; font-size: 13px; }
+  .legal-body { padding: 20px 18px; }
+  .legal-meta { padding: 16px 18px; }
+}
+
 /* ═══════════════════ TAB SWITCHER ═══════════════════ */
 .tab-bar {
   display: flex;
@@ -995,7 +1140,7 @@ body {
       <li><a href="#certs">Сертификаты</a></li>
       <li><a href="#giftcards">Подарочные карты</a></li>
       <li><a href="#services">Сервисы</a></li>
-      <li><a href="#tos">Условия</a></li>
+      <li><a href="#tos">Документы</a></li>
     </ul>
     <button class="nav-admin-btn" id="adminToggleBtn">⚙️ Панель</button>
   </div>
@@ -1081,22 +1226,200 @@ body {
 
   <div class="section-divider"></div>
 
-  <!-- ══ SECTION 4: TOS ══ -->
+  <!-- ══ SECTION 4: LEGAL ══ -->
   <section class="section reveal" id="tos">
     <div class="section-header">
       <div class="section-title-block">
-        <div class="section-icon" style="background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.15);">📋</div>
+        <div class="section-icon" style="background:linear-gradient(135deg,rgba(255,255,255,0.15),rgba(255,255,255,0.05));border:1px solid rgba(255,255,255,0.18);">📋</div>
         <div>
-          <div class="section-title">Пользовательское соглашение</div>
-          <div class="section-subtitle">Правила использования сервиса</div>
+          <div class="section-title">Документы</div>
+          <div class="section-subtitle">Правовая информация и условия использования</div>
         </div>
       </div>
     </div>
-    <div class="tos-card">
-      <div class="tos-content" id="tosContent">
-        <div class="tos-empty">Текст пользовательского соглашения будет добавлен администратором.</div>
-      </div>
+
+    <!-- Tab bar -->
+    <div class="legal-tab-bar">
+      <button class="legal-tab active" onclick="switchLegalTab('offer',this)">
+        <span class="legal-tab-icon">📄</span>
+        <span>Публичная оферта</span>
+      </button>
+      <button class="legal-tab" onclick="switchLegalTab('privacy',this)">
+        <span class="legal-tab-icon">🔒</span>
+        <span>Политика конфиденциальности</span>
+      </button>
     </div>
+
+    <!-- Offer panel -->
+    <div class="legal-panel" id="legalOffer">
+      <div class="legal-meta">
+        <span class="legal-badge">📄 Публичная оферта</span>
+        <span class="legal-date">15 августа 2025 г.</span>
+      </div>
+      <div class="legal-body">
+
+        <div class="legal-section">
+          <h3 class="legal-heading">1. Общие положения</h3>
+          <ol class="legal-list">
+            <li>Настоящее Пользовательское соглашение (далее — «Соглашение») регулирует порядок использования онлайн-сервиса (далее — «Сервис»), предоставляемого Администрацией.</li>
+            <li>Используя Сервис, включая запуск бота, регистрацию, оплату услуг или получение доступа к материалам, Пользователь подтверждает, что полностью ознакомился с условиями настоящего Соглашения и принимает их в полном объёме.</li>
+            <li>В случае несогласия с условиями Соглашения Пользователь обязан прекратить использование Сервиса.</li>
+          </ol>
+        </div>
+
+        <div class="legal-section">
+          <h3 class="legal-heading">2. Характер услуг и цифровых товаров</h3>
+          <ol class="legal-list">
+            <li>Сервис предоставляет цифровые товары и услуги нематериального характера, включая, но не ограничиваясь: информационные материалы, обучающие программы, консультации, цифровые продукты и сервисные услуги.</li>
+            <li>Материалы, предоставляемые через Сервис, могут включать: информацию из открытых источников; авторские материалы Администрации и/или третьих лиц; аналитические обзоры, подборки, рекомендации, структурированные данные.</li>
+            <li>Пользователь осознаёт и соглашается, что ценность цифровых товаров и услуг Сервиса заключается в систематизации, анализе, форме подачи, сопровождении, поддержке и обновлениях.</li>
+            <li>Сервис не заявляет и не гарантирует уникальность, исключительность или недоступность отдельных элементов материалов вне Сервиса.</li>
+          </ol>
+        </div>
+
+        <div class="legal-section">
+          <h3 class="legal-heading">3. Отказ от гарантий и ответственности</h3>
+          <ol class="legal-list">
+            <li>Сервис предоставляется на условиях «AS IS» («как есть»).</li>
+            <li>Администрация не гарантирует: соответствие Сервиса ожиданиям Пользователя; достижение каких-либо финансовых, коммерческих или профессиональных результатов; бесперебойную и безошибочную работу Сервиса.</li>
+            <li>Администрация не несёт ответственности за: любые прямые или косвенные убытки; последствия применения Пользователем полученных материалов; действия или бездействие третьих лиц; временные технические сбои.</li>
+            <li>Все решения о применении материалов принимаются Пользователем самостоятельно и на его риск.</li>
+          </ol>
+        </div>
+
+        <div class="legal-section">
+          <h3 class="legal-heading">4. Законность использования</h3>
+          <ol class="legal-list">
+            <li>Сервис не предназначен для поощрения, организации или содействия противоправной деятельности.</li>
+            <li>Пользователь обязуется использовать Сервис исключительно в рамках применимого законодательства.</li>
+            <li>Ответственность за законность использования материалов полностью возлагается на Пользователя.</li>
+          </ol>
+        </div>
+
+        <div class="legal-section">
+          <h3 class="legal-heading">5. Интеллектуальная собственность</h3>
+          <ol class="legal-list">
+            <li>Все материалы, размещённые в Сервисе, охраняются законодательством об интеллектуальной собственности.</li>
+            <li>Пользователю запрещается копировать, распространять, перепродавать или передавать материалы Сервиса без разрешения правообладателя.</li>
+            <li>Нарушение прав интеллектуальной собственности может повлечь ограничение доступа к Сервису без компенсации.</li>
+          </ol>
+        </div>
+
+        <div class="legal-section">
+          <h3 class="legal-heading">6. Ограничение доступа</h3>
+          <ol class="legal-list">
+            <li>Администрация вправе приостановить или ограничить доступ Пользователя к Сервису в случае нарушения условий Соглашения, выявления злоупотреблений или требований законодательства.</li>
+            <li>Ограничение доступа не освобождает Пользователя от обязательств, возникших ранее.</li>
+            <li>Администрация оставляет за собой право отказывать в обслуживании Пользователям, чьи действия создают повышенные риски для Сервиса.</li>
+          </ol>
+        </div>
+
+        <div class="legal-section">
+          <h3 class="legal-heading">7. Платежи и возвраты</h3>
+          <ol class="legal-list">
+            <li>Оплата услуг производится на условиях, указанных в Сервисе до момента оплаты.</li>
+            <li>В связи с нематериальным характером цифровых товаров, возврат денежных средств после предоставления доступа не осуществляется, за исключением случаев ниже.</li>
+            <li>Возврат средств возможен только если услуга не была оказана по технической вине Сервиса, либо доступ к товару фактически не был предоставлен.</li>
+            <li>Для рассмотрения вопроса о возврате Пользователь обязан обратиться в службу поддержки в течение 24 часов с момента оплаты.</li>
+            <li>Пользователь подтверждает, что обязуется не инициировать chargeback через платёжные системы без предварительного обращения в поддержку.</li>
+          </ol>
+        </div>
+
+        <div class="legal-section">
+          <h3 class="legal-heading">8. Конфиденциальность</h3>
+          <ol class="legal-list">
+            <li>Администрация может собирать минимально необходимые технические данные для обеспечения работы Сервиса.</li>
+            <li>Администрация принимает разумные меры для защиты данных, однако не гарантирует абсолютную безопасность передаваемой информации.</li>
+          </ol>
+        </div>
+
+        <div class="legal-section">
+          <h3 class="legal-heading">9. Изменение условий</h3>
+          <ol class="legal-list">
+            <li>Администрация вправе вносить изменения в настоящее Соглашение.</li>
+            <li>Актуальная версия Соглашения публикуется в Сервисе.</li>
+            <li>Продолжение использования Сервиса означает согласие Пользователя с обновлёнными условиями.</li>
+          </ol>
+        </div>
+
+        <div class="legal-section">
+          <h3 class="legal-heading">10. Контактная информация</h3>
+          <ol class="legal-list">
+            <li>По всем вопросам Пользователь может обратиться в службу поддержки через Telegram-бот.</li>
+          </ol>
+        </div>
+
+        <div class="legal-notice">
+          Используя Сервис, Пользователь подтверждает, что ознакомлен с настоящим Соглашением и принимает его условия в полном объёме.
+        </div>
+
+      </div><!-- /legal-body -->
+    </div><!-- /legalOffer -->
+
+    <!-- Privacy panel -->
+    <div class="legal-panel" id="legalPrivacy" style="display:none">
+      <div class="legal-meta">
+        <span class="legal-badge">🔒 Политика конфиденциальности</span>
+      </div>
+      <div class="legal-body">
+
+        <div class="legal-section">
+          <h3 class="legal-heading">1. Общие положения</h3>
+          <ol class="legal-list">
+            <li>Настоящая Политика конфиденциальности (далее — «Политика») регулирует порядок обработки и защиты информации, которую Пользователь передаёт при использовании Сервиса.</li>
+            <li>Используя Сервис, Пользователь подтверждает своё согласие с условиями Политики. Если Пользователь не согласен — он обязан прекратить использование Сервиса.</li>
+          </ol>
+        </div>
+
+        <div class="legal-section">
+          <h3 class="legal-heading">2. Сбор информации</h3>
+          <ol class="legal-list">
+            <li>Сервис может собирать следующие типы данных: идентификаторы аккаунта (логин, ID, никнейм); техническую информацию (IP-адрес, данные о браузере и устройстве); историю взаимодействий с Сервисом.</li>
+            <li>Сервис не требует предоставления паспортных данных, документов, фотографий или другой личной информации, кроме минимально необходимой для работы.</li>
+          </ol>
+        </div>
+
+        <div class="legal-section">
+          <h3 class="legal-heading">3. Использование информации</h3>
+          <ol class="legal-list">
+            <li>Сервис использует полученную информацию исключительно для: обеспечения работы функционала; связи с Пользователем (уведомления, поддержка); анализа и улучшения работы Сервиса.</li>
+          </ol>
+        </div>
+
+        <div class="legal-section">
+          <h3 class="legal-heading">4. Передача информации третьим лицам</h3>
+          <ol class="legal-list">
+            <li>Администрация не передаёт полученные данные третьим лицам, за исключением случаев: требования законодательства; необходимости исполнения обязательств перед Пользователем (работа с платёжными системами); наличия согласия Пользователя.</li>
+          </ol>
+        </div>
+
+        <div class="legal-section">
+          <h3 class="legal-heading">5. Хранение и защита данных</h3>
+          <ol class="legal-list">
+            <li>Данные хранятся в течение срока, необходимого для достижения целей обработки.</li>
+            <li>Администрация принимает разумные меры для защиты данных, но не гарантирует абсолютную безопасность информации при передаче через интернет.</li>
+          </ol>
+        </div>
+
+        <div class="legal-section">
+          <h3 class="legal-heading">6. Отказ от ответственности</h3>
+          <ol class="legal-list">
+            <li>Пользователь понимает и соглашается, что передача информации через интернет всегда сопряжена с рисками.</li>
+            <li>Администрация не несёт ответственности за утрату, кражу или раскрытие данных, если это произошло по вине третьих лиц или самого Пользователя.</li>
+          </ol>
+        </div>
+
+        <div class="legal-section">
+          <h3 class="legal-heading">7. Изменения в Политике</h3>
+          <ol class="legal-list">
+            <li>Администрация вправе изменять условия Политики без предварительного уведомления.</li>
+            <li>Продолжение использования Сервиса после внесения изменений означает согласие Пользователя с новой редакцией Политики.</li>
+          </ol>
+        </div>
+
+      </div><!-- /legal-body -->
+    </div><!-- /legalPrivacy -->
+
   </section>
 
   <!-- FOOTER -->
@@ -2076,8 +2399,7 @@ function toggleAdmin() {
 document.getElementById('saveTosBtn').addEventListener('click', () => {
   const text = document.getElementById('adminTosText').value.trim();
   saveTos(text);
-  const el = document.getElementById('tosContent');
-  el.innerHTML = text ? `<div class="tos-content">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>` : '<div class="tos-empty">Текст пользовательского соглашения будет добавлен администратором.</div>';
+  // TOS content is now static HTML
   document.getElementById('saveTosBtn').textContent = '✅ Сохранено';
   setTimeout(() => document.getElementById('saveTosBtn').textContent = '💾 Сохранить соглашение', 2000);
 });
@@ -2129,11 +2451,19 @@ document.getElementById('searchGamesBtn').addEventListener('click', async () => 
 });
 document.getElementById('addCertBtn').addEventListener('click', openAddCert);
 
+/* ─── LEGAL TABS ─── */
+function switchLegalTab(tab, btn) {
+  // Update buttons
+  document.querySelectorAll('.legal-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Toggle panels
+  document.getElementById('legalOffer').style.display = tab === 'offer' ? '' : 'none';
+  document.getElementById('legalPrivacy').style.display = tab === 'privacy' ? '' : 'none';
+}
+
 /* ─── TOS INIT ─── */
 function initTos() {
-  const text = loadTos();
-  const el = document.getElementById('tosContent');
-  if (text) el.innerHTML = `<div class="tos-content">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+  // Legal content is now static HTML — no dynamic loading needed
 }
 
 /* ─── SCROLL REVEAL ─── */

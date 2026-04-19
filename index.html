@@ -174,7 +174,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  padding: 0 24px;
+  padding: 0 24px 0 16px;
   margin: 0 -24px;
   background: rgba(5, 10, 25, 0.55);
   backdrop-filter: blur(30px) saturate(180%);
@@ -626,6 +626,36 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 12px;
+}
+
+/* Show all regions button */
+.btn-show-all-regions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 20px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.16);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+.btn-show-all-regions:hover {
+  background: rgba(255,255,255,0.13);
+  color: var(--text);
+}
+.btn-show-all-regions svg {
+  transition: transform 0.25s ease;
+}
+.btn-show-all-regions.expanded svg {
+  transform: rotate(180deg);
 }
 
 /* Loading state */
@@ -1237,7 +1267,8 @@ body {
     <ul class="nav-links">
       <li><a href="#certs">Сертификаты</a></li>
       <li><a href="#giftcards">Подарочные карты</a></li>
-      <li><a href="#services">Сервисы</a></li>
+      <li><a href="#vouchers">Сервисы</a></li>
+      <li><a href="#services">Игры</a></li>
       <li><a href="#tos">Документы</a></li>
     </ul>
     <button class="nav-admin-btn" id="adminToggleBtn">⚙️ Панель</button>
@@ -1310,6 +1341,34 @@ body {
         <div class="skeleton skeleton-card"></div>
       </div>
       <div class="wata-grid" id="giftCardsGrid" style="display:none"></div>
+      <button class="btn-show-all-regions" id="showAllRegionsBtn" style="display:none" onclick="toggleAllRegions()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        Показать все регионы
+      </button>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- ══ SECTION 2.5: GIFT CARDS & SERVICE ACCESS (Vouchers) ══ -->
+  <section class="section reveal" id="vouchers">
+    <div class="section-header">
+      <div class="section-title-block">
+        <div class="section-icon" style="background:linear-gradient(135deg,#FF9F0A,#FF6B00);box-shadow:0 4px 16px rgba(255,159,10,0.45);">🎮</div>
+        <div>
+          <div class="section-title">Подарочные карты и доступ к сервисам</div>
+          <div class="section-subtitle">PlayStation, Xbox, Netflix и многое другое</div>
+        </div>
+      </div>
+    </div>
+    <div id="vouchersContainer">
+      <div class="loading-grid" id="vouchersLoading">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
+      <div class="services-grid" id="vouchersGrid" style="display:none"></div>
     </div>
   </section>
 
@@ -1321,8 +1380,8 @@ body {
       <div class="section-title-block">
         <div class="section-icon section-icon-teal">🎮</div>
         <div>
-          <div class="section-title">Игры и сервисы</div>
-          <div class="section-subtitle">Пополнение игровых аккаунтов · Подписки</div>
+          <div class="section-title">Игры и внутриигровые покупки</div>
+          <div class="section-subtitle">Пополнение игровых аккаунтов · UC, Robux, V-Bucks и другое</div>
         </div>
       </div>
     </div>
@@ -2359,9 +2418,38 @@ function renderVoucherCards(items, grid) {
 }
 
 
+/* ─── GIFT CARDS REGION FILTERING ─── */
+const DEFAULT_REGIONS = ['IN', 'US', 'TR', 'UK'];
+let _allGiftCardItems = [];
+let _giftCardsExpanded = false;
+
+function toggleAllRegions() {
+  const btn = document.getElementById('showAllRegionsBtn');
+  const grid = document.getElementById('giftCardsGrid');
+  _giftCardsExpanded = !_giftCardsExpanded;
+  if (_giftCardsExpanded) {
+    renderVoucherCards(_allGiftCardItems, grid);
+    btn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg> Свернуть`;
+    btn.classList.add('expanded');
+  } else {
+    renderVoucherCards(getDefaultRegionItems(_allGiftCardItems), grid);
+    btn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg> Показать все регионы`;
+    btn.classList.remove('expanded');
+  }
+}
+
+function getDefaultRegionItems(items) {
+  const filtered = items.filter(s => {
+    const name = (s.name || s.title || '').toUpperCase();
+    return DEFAULT_REGIONS.some(r => name.includes(r));
+  });
+  return filtered.length ? filtered : items.slice(0, 4);
+}
+
 async function loadGiftCards() {
   const loading = document.getElementById('giftCardsLoading');
   const grid = document.getElementById('giftCardsGrid');
+  const btn = document.getElementById('showAllRegionsBtn');
   try {
     const data = await fetchWata('/v3/vouchers/services');
     const items = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
@@ -2371,12 +2459,50 @@ async function loadGiftCards() {
     });
     const toRender = appleItems.length ? appleItems : items.slice(0, 12);
     if (!toRender.length) throw new Error('empty');
+    _allGiftCardItems = toRender;
     loading.style.display = 'none'; grid.style.display = 'grid';
-    renderVoucherCards(toRender, grid);
+    renderVoucherCards(getDefaultRegionItems(toRender), grid);
+    if (toRender.length > getDefaultRegionItems(toRender).length) {
+      btn.style.display = 'flex';
+    }
   } catch(e) {
     console.warn('Gift cards API unavailable, using mock:', e.message);
+    _allGiftCardItems = MOCK_VOUCHERS;
     loading.style.display = 'none'; grid.style.display = 'grid';
-    renderVoucherCards(MOCK_VOUCHERS, grid);
+    renderVoucherCards(getDefaultRegionItems(MOCK_VOUCHERS), grid);
+    if (MOCK_VOUCHERS.length > getDefaultRegionItems(MOCK_VOUCHERS).length) {
+      btn.style.display = 'flex';
+    }
+  }
+}
+
+/* ─── VOUCHERS (Gift Cards & Service Access) ─── */
+async function loadVouchers() {
+  const loading = document.getElementById('vouchersLoading');
+  const grid = document.getElementById('vouchersGrid');
+  try {
+    const data = await fetchWata('/v3/vouchers');
+    const raw = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
+    const items = raw.filter(s => {
+      const n = (s.name || s.title || '').toLowerCase();
+      // Exclude Apple items (those are in the gift cards section)
+      return !(n.includes('apple') || n.includes('app store') || n.includes('itunes') || n.includes('icloud') || n.includes('ios'));
+    }).filter(s => s.isAvailable !== false);
+    if (!items.length) throw new Error('empty');
+    loading.style.display = 'none'; grid.style.display = 'grid';
+    renderServiceCards(items.slice(0, 30), grid);
+  } catch(e) {
+    console.warn('Vouchers API unavailable, using mock:', e.message);
+    const mockVouchers = [
+      { id: 'psn', name: 'PlayStation Network', category: 'Игровые карты' },
+      { id: 'xbox', name: 'Xbox Gift Card', category: 'Игровые карты' },
+      { id: 'netflix', name: 'Netflix', category: 'Стриминг' },
+      { id: 'spotify', name: 'Spotify Premium', category: 'Музыка' },
+      { id: 'steam', name: 'Steam Wallet', category: 'Игровая платформа' },
+      { id: 'nintendo', name: 'Nintendo eShop', category: 'Игровые карты' },
+    ].map(m => ({ ...m, isMock: true }));
+    loading.style.display = 'none'; grid.style.display = 'grid';
+    renderServiceCards(mockVouchers, grid);
   }
 }
 
@@ -2553,7 +2679,7 @@ document.getElementById('adminAddCertBtn').addEventListener('click', () => {
   openAddCert();
 });
 document.getElementById('reloadApiBtn').addEventListener('click', () => {
-  loadGiftCards(); loadServices();
+  loadGiftCards(); loadVouchers(); loadServices();
   document.getElementById('reloadApiBtn').textContent = '⏳ Загрузка...';
   setTimeout(() => document.getElementById('reloadApiBtn').textContent = '🔄 Перезагрузить товары из API', 3000);
 });
@@ -2562,7 +2688,7 @@ document.getElementById('testApiBtn').addEventListener('click', async () => {
   diagEl.style.display = 'block';
   diagEl.textContent = '⏳ Проверка...';
   const results = [];
-  for (const ep of ['/v3/vouchers/services', '/v3/topup']) {
+  for (const ep of ['/v3/vouchers/services', '/v3/vouchers', '/v3/topup']) {
     try {
       const res = await fetch(`${API_BASE}${ep}`, { headers, signal: AbortSignal.timeout(6000) });
       const text = await res.text();
@@ -2621,6 +2747,7 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 initTos();
 renderCerts();
 loadGiftCards();
+loadVouchers();
 loadServices();
 </script>
 </body>

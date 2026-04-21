@@ -2160,6 +2160,11 @@ async function fetchWata(endpoint, options = {}) {
       else if (j.detail) { msg = j.detail; }
       else { msg = `Ошибка ${res.status}: ${bodyText.substring(0, 300)}`; }
     } catch { msg = `Ошибка ${res.status}: ${bodyText.substring(0, 300)}`; }
+    // Make common errors user-friendly
+    if (res.status === 400) msg = `Ошибка запроса: ${msg}. Попробуйте другой товар.`;
+    if (res.status === 402) msg = 'Платёж отклонён. Проверьте данные карты или попробуйте другой способ оплаты.';
+    if (res.status === 422) msg = `Неверные данные заказа: ${msg}`;
+    if (res.status === 503 || res.status === 500) msg = 'Сервис временно недоступен. Попробуйте позже.';
     throw new Error(msg);
   }
   return res.json();
@@ -2273,12 +2278,17 @@ async function startVoucherPurchase(voucher) {
 
   const orderId = genOrderId();
   try {
+    // voucherId must be a valid integer — if it's a mock string ID, alert user
+    const vid = parseInt(voucher.id, 10);
+    if (isNaN(vid)) {
+      throw new Error('Этот товар недоступен для покупки через API. Пожалуйста, попробуйте другой вариант или свяжитесь с поддержкой.');
+    }
     const body = {
-      voucherId: Number(voucher.id),
-      amount: Number(voucher.minPrice),
+      voucherId: vid,
       count: 1,
       orderId,
       email,
+      currency: 'RUB',
       description: `Покупка ${voucher.name}`,
       successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
       failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
@@ -2393,14 +2403,18 @@ async function startTopupPurchase(product, gameId) {
   try {
     const body = {
       topupId: String(product.id),
-      amount: Number(product.minPrice),
       orderId,
       fields: fieldsObj,
       email,
+      currency: 'RUB',
       description: `Пополнение: ${product.name}`,
       successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
       failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
     };
+    // Only include amount if it's a valid number
+    if (product.minPrice && !isNaN(Number(product.minPrice))) {
+      body.amount = Number(product.minPrice);
+    }
     const result = await fetchWata('/v3/topup', { method: 'POST', body: JSON.stringify(body) });
     wmCurrentOrder = { orderId, type: 'topup' };
     openPaymentWindow(result.paymentLink, orderId, 'topup');

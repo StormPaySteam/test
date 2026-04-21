@@ -1881,6 +1881,8 @@ body {
       <div class="admin-section-title">Данные API</div>
       <button class="btn-secondary" id="reloadApiBtn" style="width:100%;font-size:13px;padding:10px;">🔄 Перезагрузить товары из API</button>
       <button class="btn-secondary" id="testApiBtn" style="width:100%;font-size:13px;padding:10px;margin-top:8px;">🔍 Диагностика API</button>
+      <button class="btn-secondary" id="rawTopupBtn" style="width:100%;font-size:13px;padding:10px;margin-top:8px;">🧬 Показать структуру topup полей (введите ID)</button>
+      <input class="form-input" id="rawTopupId" placeholder="ID топапа (напр: 123)" style="margin-top:6px;font-size:12px;">
       <button class="btn-secondary" id="searchGamesBtn" style="width:100%;font-size:13px;padding:10px;margin-top:8px;">🎮 Найти ID игр (Minecraft, Roblox и др.)</button>
       <div id="apiDiagResult" style="margin-top:10px;font-size:11px;color:var(--text-tertiary);font-family:'SF Mono','Fira Code',monospace;word-break:break-all;line-height:1.6;display:none;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:10px;padding:10px 14px;white-space:pre-wrap;max-height:400px;overflow-y:auto;"></div>
     </div>
@@ -2336,29 +2338,40 @@ async function openTopupDetail(id, name, img) {
   wmFields = {};
 
   let products = [];
-  let fields = [];
+  let rawFields = [];   // raw field descriptors from API
+  let rawApiData = null;
   try {
     const data = await fetchWata(`/v3/topup/${id}`);
+    rawApiData = data;
+    console.log('[WATA] /v3/topup/' + id, JSON.stringify(data, null, 2));
     products = (data.details?.products || data.products || []).filter(p => p.isAvailable !== false);
-    fields = data.details?.fields || [];
+    rawFields = data.details?.fields || data.fields || [];
     if (data.details?.categoryName) document.getElementById('wmTitle').textContent = data.details.categoryName;
   } catch(e) {
     console.warn('TopUp API error:', e.message);
   }
 
-  // render extra fields (e.g. User ID, Server ID)
-  // WATA fields: [{Name, Description, Regex}] or legacy [{keyName: label}]
-  if (fields.length) {
+  // render extra fields — store raw field object on input for exact replay
+  if (rawFields.length) {
     const fb = document.getElementById('wmFieldsBlock');
     fb.style.display = '';
-    fb.innerHTML = fields.map((f, idx) => {
-      const fieldName = f.Name || f.name || Object.keys(f).find(k => k !== 'Regex') || 'field_' + idx;
-      const label = f.Description || f.description || f[fieldName] || fieldName;
+    fb.innerHTML = rawFields.map((f, idx) => {
+      // Support all known WATA field shapes
+      const fieldName = f.Name || f.name || f.Key || f.key ||
+        Object.keys(f).find(k => !/^(Regex|regex|Description|description|Placeholder|placeholder)$/i.test(k)) ||
+        'field_' + idx;
+      const label = f.Description || f.description || f.Label || f.label || f[fieldName] || fieldName;
+      const placeholder = f.Placeholder || f.placeholder || label;
       return `<div class="form-group" style="margin-bottom:12px">
         <label class="form-label">${label}</label>
-        <input class="form-input" id="wmField_${idx}" placeholder="${label}" data-fieldname="${fieldName}" data-label="${label}">
+        <input class="form-input" id="wmField_${idx}"
+          placeholder="${placeholder}"
+          data-fieldname="${fieldName}"
+          data-rawfield="${encodeURIComponent(JSON.stringify(f))}">
       </div>`;
     }).join('');
+    // Show raw fields in console for debugging
+    console.log('[WATA] rawFields:', JSON.stringify(rawFields, null, 2));
   }
 
   if (!products.length) {
@@ -2389,12 +2402,17 @@ async function startTopupPurchase(product, gameId) {
   const email = document.getElementById('wmEmail').value.trim();
   if (!email || !email.includes('@')) { alert('Введите корректный email'); return; }
 
-  // collect extra fields — WATA expects array [{Name, Value}]
+  // collect extra fields
   const fieldInputs = document.querySelectorAll('#wmFieldsBlock input[data-fieldname]');
-  const fieldsArr = [];
+  // Build fields in ALL formats WATA might expect
+  const fieldsArr  = [];   // [{Name, Value}]
+  const fieldsObj  = {};   // {Name: Value}
   for (const inp of fieldInputs) {
     if (!inp.value.trim()) { alert(`Заполните поле: ${inp.placeholder}`); return; }
-    fieldsArr.push({ Name: inp.dataset.fieldname, Value: inp.value.trim() });
+    const fieldName = inp.dataset.fieldname;
+    const val = inp.value.trim();
+    fieldsArr.push({ Name: fieldName, Value: val });
+    fieldsObj[fieldName] = val;
   }
 
   wmCurrentItem = product;
@@ -2405,7 +2423,8 @@ async function startTopupPurchase(product, gameId) {
     const body = {
       topupId: String(product.id),
       orderId,
-      fields: fieldsArr,
+      fields: fieldsArr.length ? fieldsArr : undefined,
+      playerFields: fieldsArr.length ? fieldsArr : undefined,
       email,
       currency: 'RUB',
       description: `Пополнение: ${product.name}`,
@@ -2416,6 +2435,7 @@ async function startTopupPurchase(product, gameId) {
     if (product.minPrice && !isNaN(Number(product.minPrice))) {
       body.amount = Number(product.minPrice);
     }
+    console.log('[WATA] POST /v3/topup body:', JSON.stringify(body, null, 2));
     const result = await fetchWata('/v3/topup', { method: 'POST', body: JSON.stringify(body) });
     wmCurrentOrder = { orderId, type: 'topup' };
     openPaymentWindow(result.paymentLink, orderId, 'topup');
@@ -2781,6 +2801,20 @@ document.getElementById('adminAddCertBtn').addEventListener('click', () => {
   document.getElementById('adminPanel').classList.remove('open');
   openAddCert();
 });
+document.getElementById('rawTopupBtn').addEventListener('click', async () => {
+  const diagEl = document.getElementById('apiDiagResult');
+  const tid = document.getElementById('rawTopupId').value.trim();
+  if (!tid) { alert('Введите ID топапа'); return; }
+  diagEl.style.display = 'block';
+  diagEl.textContent = '⏳ Запрашиваю /v3/topup/' + tid + '...';
+  try {
+    const data = await fetchWata('/v3/topup/' + tid);
+    diagEl.textContent = JSON.stringify(data, null, 2);
+  } catch(e) {
+    diagEl.textContent = '❌ ' + e.message;
+  }
+});
+
 document.getElementById('reloadApiBtn').addEventListener('click', () => {
   loadGiftCards(); loadVouchers(); loadServices();
   document.getElementById('reloadApiBtn').textContent = '⏳ Загрузка...';

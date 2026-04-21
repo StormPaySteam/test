@@ -2250,9 +2250,10 @@ async function openVoucherDetail(id, name) {
   }
 
   if (!vouchers.length) {
-    // fallback mock
+    // Known mock prices for Apple products
     const mock = { 'apple-500':549,'apple-1000':1099,'apple-1500':1649,'apple-2000':2199,'apple-3000':3299,'apple-5000':5499,'icloud-50':169,'icloud-200':269,'icloud-2tb':899 };
-    const p = mock[id];
+    const p = mock[id] || null;
+    // If price unknown — let user enter it manually (minPrice: null triggers amount input)
     vouchers = [{ id: id, name: name, minPrice: p, isAvailable: true }];
   }
 
@@ -2263,16 +2264,40 @@ function renderVoucherItems(vouchers) {
   const ul = document.getElementById('wmCodesList');
   ul.innerHTML = '';
   vouchers.forEach(v => {
+    const price = v.minPrice ?? v.price ?? null;
     const li = document.createElement('li');
     li.className = 'product-code-item';
-    li.style.cursor = 'pointer';
-    li.innerHTML = `
+    li.style.flexDirection = 'column';
+    li.style.alignItems = 'stretch';
+    li.style.gap = '8px';
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px';
+    row.innerHTML = `
       <div class="product-code-name">${v.name}</div>
       <div style="display:flex;align-items:center;gap:10px">
-        ${v.minPrice ? `<div class="product-code-price">${formatPrice(v.minPrice)}</div>` : ''}
+        ${price ? `<div class="product-code-price">${formatPrice(price)}</div>` : ''}
         <button class="btn-buy" style="padding:8px 14px;font-size:12px">Купить</button>
       </div>`;
-    li.querySelector('.btn-buy').addEventListener('click', () => startVoucherPurchase(v));
+
+    let amountInput = null;
+    if (!price) {
+      amountInput = document.createElement('input');
+      amountInput.className = 'form-input';
+      amountInput.type = 'number';
+      amountInput.min = '1';
+      amountInput.placeholder = 'Введите сумму в ₽';
+      amountInput.style.cssText = 'font-size:13px';
+      li.appendChild(amountInput);
+    }
+
+    row.querySelector('.btn-buy').addEventListener('click', () => {
+      const finalPrice = price || (amountInput ? Number(amountInput.value) : 0);
+      if (!finalPrice || finalPrice <= 0) { alert('Введите сумму'); return; }
+      startVoucherPurchase({ ...v, minPrice: finalPrice });
+    });
+
+    li.insertBefore(row, li.firstChild);
     ul.appendChild(li);
   });
 }
@@ -2297,8 +2322,8 @@ async function startVoucherPurchase(voucher) {
     return;
   }
   if (!voucherAmount || voucherAmount <= 0) {
-    document.getElementById('wmErrorMsg').textContent = 'Не удалось определить цену ваучера.';
-    showWmStep(4);
+    showWmStep(1);
+    alert('Введите сумму в поле ниже и нажмите «Купить»');
     return;
   }
 

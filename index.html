@@ -2347,15 +2347,16 @@ async function openTopupDetail(id, name, img) {
   }
 
   // render extra fields (e.g. User ID, Server ID)
+  // WATA fields: [{Name, Description, Regex}] or legacy [{keyName: label}]
   if (fields.length) {
     const fb = document.getElementById('wmFieldsBlock');
     fb.style.display = '';
     fb.innerHTML = fields.map((f, idx) => {
-      const key = Object.keys(f).find(k => k !== 'Regex') || `Input${idx+1}`;
-      const label = f[key] || key;
+      const fieldName = f.Name || f.name || Object.keys(f).find(k => k !== 'Regex') || 'field_' + idx;
+      const label = f.Description || f.description || f[fieldName] || fieldName;
       return `<div class="form-group" style="margin-bottom:12px">
         <label class="form-label">${label}</label>
-        <input class="form-input" id="wmField_${key}" placeholder="${label}" data-key="${key}">
+        <input class="form-input" id="wmField_${idx}" placeholder="${label}" data-fieldname="${fieldName}" data-label="${label}">
       </div>`;
     }).join('');
   }
@@ -2388,12 +2389,12 @@ async function startTopupPurchase(product, gameId) {
   const email = document.getElementById('wmEmail').value.trim();
   if (!email || !email.includes('@')) { alert('Введите корректный email'); return; }
 
-  // collect extra fields
-  const fieldInputs = document.querySelectorAll('#wmFieldsBlock input[data-key]');
-  const fieldsObj = {};
+  // collect extra fields — WATA expects array [{Name, Value}]
+  const fieldInputs = document.querySelectorAll('#wmFieldsBlock input[data-fieldname]');
+  const fieldsArr = [];
   for (const inp of fieldInputs) {
     if (!inp.value.trim()) { alert(`Заполните поле: ${inp.placeholder}`); return; }
-    fieldsObj[inp.dataset.key] = inp.value.trim();
+    fieldsArr.push({ Name: inp.dataset.fieldname, Value: inp.value.trim() });
   }
 
   wmCurrentItem = product;
@@ -2404,7 +2405,7 @@ async function startTopupPurchase(product, gameId) {
     const body = {
       topupId: String(product.id),
       orderId,
-      fields: fieldsObj,
+      fields: fieldsArr,
       email,
       currency: 'RUB',
       description: `Пополнение: ${product.name}`,

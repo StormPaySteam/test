@@ -2375,11 +2375,14 @@ async function openTopupDetail(id, name, img) {
     const fb = document.getElementById('wmFieldsBlock');
     fb.style.display = '';
     fb.innerHTML = rawFields.map((f, idx) => {
-      // Support all known WATA field shapes
+      // WATA legacy format: { "Input1": "User ID", "Regex": "..." }
+      // New format: { Name: "Input1", Description: "User ID", Regex: "..." }
       const fieldName = f.Name || f.name || f.Key || f.key ||
-        Object.keys(f).find(k => !/^(Regex|regex|Description|description|Placeholder|placeholder)$/i.test(k)) ||
+        Object.keys(f).find(k => !/^(Regex|regex|Description|description|Placeholder|placeholder|Label|label)$/i.test(k)) ||
         'field_' + idx;
-      const label = f.Description || f.description || f.Label || f.label || f[fieldName] || fieldName;
+      // In legacy format the value at fieldName key IS the human label
+      const label = f.Description || f.description || f.Label || f.label ||
+        (typeof f[fieldName] === 'string' ? f[fieldName] : fieldName);
       const placeholder = f.Placeholder || f.placeholder || label;
       return `<div class="form-group" style="margin-bottom:12px">
         <label class="form-label">${label}</label>
@@ -2471,37 +2474,46 @@ async function startTopupPurchase(product, gameId) {
   showWmStep(2);
 
   const orderId = genOrderId();
+  // Resolve amount BEFORE try block so it's accessible in catch
+  const resolvedAmount = product._resolvedAmount
+    ?? product.price ?? product.minPrice ?? product.amount
+    ?? product.cost ?? product.retailPrice ?? product.salePrice ?? null;
+  const numAmount = Number(resolvedAmount);
+  if (!isNaN(numAmount) && numAmount <= 0 && !product._resolvedAmount) {
+    showWmStep(1);
+    alert('Не удалось определить сумму. Введите сумму вручную.');
+    return;
+  }
+
+  // WATA fields: legacy format is {Input1: "User ID", Regex: "..."} — key IS the field name
+  // We must send fields as [{Name: "Input1", Value: "..."}] — which we already do correctly
+  // Also send as flat object for compatibility: {"Input1": "value"}
+  const fieldsFlat = {};
+  fieldsArr.forEach(f => { fieldsFlat[f.Name] = f.Value; });
+
+  const body = {
+    topupId: String(product.id),
+    orderId,
+    email,
+    currency: 'RUB',
+    amount: numAmount,
+    description: `Пополнение: ${product.name}`,
+    successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
+    failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
+  };
+
+  // Send fields in both formats WATA might accept
+  if (fieldsArr.length) {
+    body.fields = fieldsArr;           // [{Name, Value}]
+    body.playerFields = fieldsFlat;    // {Input1: "value"}
+  }
+
   try {
-    const body = {
-      topupId: String(product.id),
-      orderId,
-      fields: fieldsArr.length ? fieldsArr : undefined,
-      playerFields: fieldsArr.length ? fieldsArr : undefined,
-      email,
-      currency: 'RUB',
-      description: `Пополнение: ${product.name}`,
-      successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
-      failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
-    };
-    // Resolve amount from all possible price fields
-    const resolvedAmount = product._resolvedAmount
-      ?? product.price ?? product.minPrice ?? product.amount
-      ?? product.cost ?? product.retailPrice ?? product.salePrice ?? null;
-    const numAmount = Number(resolvedAmount);
-    if (!isNaN(numAmount) && numAmount > 0) {
-      body.amount = numAmount;
-    } else {
-      // amount is required by WATA — abort with clear message
-      showWmStep(1);
-      alert('Не удалось определить сумму. Введите сумму вручную.');
-      return;
-    }
     console.log('[WATA] POST /v3/topup body:', JSON.stringify(body, null, 2));
     const result = await fetchWata('/v3/topup', { method: 'POST', body: JSON.stringify(body) });
     wmCurrentOrder = { orderId, type: 'topup' };
     openPaymentWindow(result.paymentLink, orderId, 'topup');
   } catch(e) {
-    // Show full debug: error + what we sent
     const errDetail = e.message + '\n\n— ОТПРАВЛЕНО В API —\n' + JSON.stringify(body, null, 2);
     document.getElementById('wmErrorMsg').innerHTML =
       '<div style="text-align:left;font-size:11px;font-family:monospace;background:rgba(0,0,0,0.4);border-radius:8px;padding:10px;max-height:260px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;color:#f87171">' +

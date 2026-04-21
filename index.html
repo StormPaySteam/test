@@ -2285,22 +2285,36 @@ async function startVoucherPurchase(voucher) {
   showWmStep(2);
 
   const orderId = genOrderId();
+  const vid = parseInt(voucher.id, 10);
+  const count = 1;
+  // amount: minPrice * count (required, must be >= minPrice*count per WATA docs)
+  const voucherPrice = voucher.minPrice ?? voucher.price ?? null;
+  const voucherAmount = voucherPrice ? Math.ceil(Number(voucherPrice) * count * 100) / 100 : null;
+
+  if (isNaN(vid)) {
+    document.getElementById('wmErrorMsg').textContent = 'Этот товар недоступен для покупки через API.';
+    showWmStep(4);
+    return;
+  }
+  if (!voucherAmount || voucherAmount <= 0) {
+    document.getElementById('wmErrorMsg').textContent = 'Не удалось определить цену ваучера.';
+    showWmStep(4);
+    return;
+  }
+
+  const body = {
+    voucherId: vid,
+    amount: voucherAmount,
+    count,
+    orderId,
+    email,
+    description: `Покупка ${voucher.name}`,
+    successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
+    failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
+  };
+
   try {
-    // voucherId must be a valid integer — if it's a mock string ID, alert user
-    const vid = parseInt(voucher.id, 10);
-    if (isNaN(vid)) {
-      throw new Error('Этот товар недоступен для покупки через API. Пожалуйста, попробуйте другой вариант или свяжитесь с поддержкой.');
-    }
-    const body = {
-      voucherId: vid,
-      count: 1,
-      orderId,
-      email,
-      currency: 'RUB',
-      description: `Покупка ${voucher.name}`,
-      successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
-      failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
-    };
+    console.log('[WATA] POST /v3/vouchers body:', JSON.stringify(body, null, 2));
     const result = await fetchWata('/v3/vouchers', { method: 'POST', body: JSON.stringify(body) });
     wmCurrentOrder = { orderId, type: 'voucher' };
     openPaymentWindow(result.paymentLink, orderId, 'voucher');
@@ -2404,8 +2418,8 @@ async function openTopupDetail(id, name, img) {
 }
 
 function getProductPrice(p) {
-  // Try every known price field WATA might return
-  const raw = p.price ?? p.minPrice ?? p.amount ?? p.cost ?? p.retailPrice ?? p.salePrice ?? null;
+  // Per WATA docs: show minPrice (minimum sale price) to customer
+  const raw = p.minPrice ?? p.price ?? p.amount ?? null;
   const num = Number(raw);
   return (!isNaN(num) && num > 0) ? num : null;
 }
@@ -2474,38 +2488,33 @@ async function startTopupPurchase(product, gameId) {
   showWmStep(2);
 
   const orderId = genOrderId();
-  // Resolve amount BEFORE try block so it's accessible in catch
-  const resolvedAmount = product._resolvedAmount
-    ?? product.price ?? product.minPrice ?? product.amount
-    ?? product.cost ?? product.retailPrice ?? product.salePrice ?? null;
+  // Per WATA docs: amount must be minPrice <= amount <= minPrice*1.5
+  // Use _resolvedAmount if manually entered, otherwise use minPrice
+  const resolvedAmount = product._resolvedAmount ?? product.minPrice ?? product.price ?? null;
   const numAmount = Number(resolvedAmount);
-  if (!isNaN(numAmount) && numAmount <= 0 && !product._resolvedAmount) {
+  if (isNaN(numAmount) || numAmount <= 0) {
     showWmStep(1);
     alert('Не удалось определить сумму. Введите сумму вручную.');
     return;
   }
 
-  // WATA fields: legacy format is {Input1: "User ID", Regex: "..."} — key IS the field name
-  // We must send fields as [{Name: "Input1", Value: "..."}] — which we already do correctly
-  // Also send as flat object for compatibility: {"Input1": "value"}
+  // WATA docs: fields must be flat object {"Input1": "700123456"}
   const fieldsFlat = {};
   fieldsArr.forEach(f => { fieldsFlat[f.Name] = f.Value; });
 
   const body = {
-    topupId: String(product.id),
+    topupId: Number(product.id),
     orderId,
     email,
-    currency: 'RUB',
     amount: numAmount,
     description: `Пополнение: ${product.name}`,
     successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
     failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
   };
 
-  // Send fields in both formats WATA might accept
+  // WATA API expects fields as flat object: {"Input1": "700123456"}
   if (fieldsArr.length) {
-    body.fields = fieldsArr;           // [{Name, Value}]
-    body.playerFields = fieldsFlat;    // {Input1: "value"}
+    body.fields = fieldsFlat;   // correct format per WATA docs: {"Input1": "value"}
   }
 
   try {

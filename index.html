@@ -2381,19 +2381,52 @@ async function openTopupDetail(id, name, img) {
   renderTopupItems(products, id);
 }
 
+function getProductPrice(p) {
+  // Try every known price field WATA might return
+  const raw = p.price ?? p.minPrice ?? p.amount ?? p.cost ?? p.retailPrice ?? p.salePrice ?? null;
+  const num = Number(raw);
+  return (!isNaN(num) && num > 0) ? num : null;
+}
+
 function renderTopupItems(products, gameId) {
   const ul = document.getElementById('wmCodesList');
   ul.innerHTML = '';
   products.forEach(p => {
+    const price = getProductPrice(p);
     const li = document.createElement('li');
     li.className = 'product-code-item';
-    li.innerHTML = `
+    li.style.flexDirection = 'column';
+    li.style.alignItems = 'stretch';
+    li.style.gap = '8px';
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px';
+    row.innerHTML = `
       <div class="product-code-name">${p.name}</div>
       <div style="display:flex;align-items:center;gap:10px">
-        ${p.minPrice ? `<div class="product-code-price">${formatPrice(p.minPrice)}</div>` : ''}
+        ${price ? `<div class="product-code-price">${formatPrice(price)}</div>` : ''}
         <button class="btn-buy" style="padding:8px 14px;font-size:12px">Купить</button>
       </div>`;
-    li.querySelector('.btn-buy').addEventListener('click', () => startTopupPurchase(p, gameId));
+
+    // If no fixed price — show amount input
+    let amountInput = null;
+    if (!price) {
+      amountInput = document.createElement('input');
+      amountInput.className = 'form-input';
+      amountInput.type = 'number';
+      amountInput.min = '1';
+      amountInput.placeholder = 'Введите сумму в ₽';
+      amountInput.style.cssText = 'margin-top:4px;font-size:13px';
+      li.appendChild(amountInput);
+    }
+
+    row.querySelector('.btn-buy').addEventListener('click', () => {
+      const finalAmount = price || (amountInput ? Number(amountInput.value) : 0);
+      if (!finalAmount || finalAmount <= 0) { alert('Введите сумму пополнения'); return; }
+      startTopupPurchase({ ...p, _resolvedAmount: finalAmount }, gameId);
+    });
+
+    li.insertBefore(row, li.firstChild);
     ul.appendChild(li);
   });
 }
@@ -2431,9 +2464,18 @@ async function startTopupPurchase(product, gameId) {
       successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
       failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
     };
-    // Only include amount if it's a valid number
-    if (product.minPrice && !isNaN(Number(product.minPrice))) {
-      body.amount = Number(product.minPrice);
+    // Resolve amount from all possible price fields
+    const resolvedAmount = product._resolvedAmount
+      ?? product.price ?? product.minPrice ?? product.amount
+      ?? product.cost ?? product.retailPrice ?? product.salePrice ?? null;
+    const numAmount = Number(resolvedAmount);
+    if (!isNaN(numAmount) && numAmount > 0) {
+      body.amount = numAmount;
+    } else {
+      // amount is required by WATA — abort with clear message
+      showWmStep(1);
+      alert('Не удалось определить сумму. Введите сумму вручную.');
+      return;
     }
     console.log('[WATA] POST /v3/topup body:', JSON.stringify(body, null, 2));
     const result = await fetchWata('/v3/topup', { method: 'POST', body: JSON.stringify(body) });

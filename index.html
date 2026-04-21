@@ -2162,7 +2162,13 @@ async function fetchWata(endpoint, options = {}) {
     let msg = `Ошибка ${res.status}`;
     try {
       const j = JSON.parse(bodyText);
-      if (j.errors) { const errs = Object.values(j.errors).flat(); if (errs.length) msg = errs.join('; '); }
+      // WATA API error format: { error: { message, details, validationErrors } }
+      if (j.error) {
+        const e = j.error;
+        if (e.validationErrors && e.validationErrors.length) msg = e.validationErrors.map(v => v.message).join('; ');
+        else if (e.details) msg = e.details;
+        else if (e.message) msg = e.message;
+      } else if (j.errors) { const errs = Object.values(j.errors).flat(); if (errs.length) msg = errs.join('; '); }
       else if (j.message) { msg = j.message; }
       else if (j.title) { msg = j.title; }
       else if (j.detail) { msg = j.detail; }
@@ -2528,7 +2534,7 @@ async function startTopupPurchase(product, gameId) {
   fieldsArr.forEach(f => { fieldsFlat[f.Name] = f.Value; });
 
   const body = {
-    topupId: Number(product.id),
+    topupId: String(product.id),
     orderId,
     email,
     amount: numAmount,

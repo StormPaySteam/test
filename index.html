@@ -1815,6 +1815,12 @@ body {
         <div style="font-size:13px;color:var(--text-tertiary);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Выберите номинал</div>
         <ul class="product-codes-list" id="wmCodesList"></ul>
       </div>
+      <!-- DEBUG: raw API viewer -->
+      <div id="wmDebugBlock" style="display:none;margin-top:12px">
+        <div style="font-size:11px;color:var(--text-tertiary);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🔬 RAW API RESPONSE</div>
+        <pre id="wmDebugJson" style="font-size:10px;color:#a78bfa;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px;overflow-x:auto;white-space:pre-wrap;word-break:break-all;max-height:300px;overflow-y:auto;text-align:left"></pre>
+      </div>
+
       <!-- STEP 2: loading -->
       <div id="wmStep2" style="display:none;text-align:center;padding:40px 0">
         <div style="font-size:48px;margin-bottom:16px">&#x23F3;</div>
@@ -2347,8 +2353,21 @@ async function openTopupDetail(id, name, img) {
     products = (data.details?.products || data.products || []).filter(p => p.isAvailable !== false);
     rawFields = data.details?.fields || data.fields || [];
     if (data.details?.categoryName) document.getElementById('wmTitle').textContent = data.details.categoryName;
+    // Show raw API response in debug panel
+    const debugEl = document.getElementById('wmDebugJson');
+    const debugBlock = document.getElementById('wmDebugBlock');
+    if (debugEl && debugBlock) {
+      debugEl.textContent = JSON.stringify(data, null, 2);
+      debugBlock.style.display = '';
+    }
   } catch(e) {
     console.warn('TopUp API error:', e.message);
+    const debugEl = document.getElementById('wmDebugJson');
+    const debugBlock = document.getElementById('wmDebugBlock');
+    if (debugEl && debugBlock) {
+      debugEl.textContent = 'ERROR: ' + e.message;
+      debugBlock.style.display = '';
+    }
   }
 
   // render extra fields — store raw field object on input for exact replay
@@ -2482,7 +2501,11 @@ async function startTopupPurchase(product, gameId) {
     wmCurrentOrder = { orderId, type: 'topup' };
     openPaymentWindow(result.paymentLink, orderId, 'topup');
   } catch(e) {
-    document.getElementById('wmErrorMsg').textContent = e.message;
+    // Show full debug: error + what we sent
+    const errDetail = e.message + '\n\n— ОТПРАВЛЕНО В API —\n' + JSON.stringify(body, null, 2);
+    document.getElementById('wmErrorMsg').innerHTML =
+      '<div style="text-align:left;font-size:11px;font-family:monospace;background:rgba(0,0,0,0.4);border-radius:8px;padding:10px;max-height:260px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;color:#f87171">' +
+      errDetail.replace(/</g,'&lt;') + '</div>';
     showWmStep(4);
   }
 }

@@ -630,6 +630,57 @@ body {
 
 /* ─── Voucher category groups ─── */
 .vouchers-container { display: flex; flex-direction: column; gap: 28px; }
+
+/* ─── Fallback / error banner для секций с проблемами API ─── */
+.api-fallback-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(255,159,10,0.10), rgba(255,69,58,0.08));
+  border: 1px solid rgba(255,159,10,0.30);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+.api-fallback-banner .banner-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.api-fallback-banner .banner-body { flex: 1; min-width: 0; }
+.api-fallback-banner .banner-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #FFB84D;
+  margin-bottom: 4px;
+}
+.api-fallback-banner .banner-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.api-fallback-banner .banner-retry {
+  margin-top: 10px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.api-fallback-banner .banner-retry:hover {
+  background: rgba(255,255,255,0.14);
+  transform: scale(1.02);
+}
+.api-fallback-banner .banner-retry:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .vouchers-group { display: flex; flex-direction: column; gap: 12px; }
 .vouchers-group-title {
   font-size: 13px;
@@ -2271,56 +2322,94 @@ const MOCK_TOPUP = [
 ];
 
 /* ─── API FETCH ─── */
+/**
+ * Запрос к WATA API через прокси-Worker.
+ * @param {string} endpoint - Путь после API_BASE, напр. "/v3/topup"
+ * @param {Object} [options] - Опции fetch + кастомные:
+ *   - timeout {number} - timeout одной попытки в мс (по умолч. 15000)
+ *   - retries {number} - сколько раз повторить при ошибке/таймауте (по умолч. 0)
+ *   - retryDelay {number} - задержка между попытками в мс (по умолч. 800)
+ */
 async function fetchWata(endpoint, options = {}) {
-  const { headers: extraHeaders, ...restOptions } = options;
+  const {
+    headers: extraHeaders,
+    timeout = 15000,
+    retries = 0,
+    retryDelay = 800,
+    ...restOptions
+  } = options;
   const mergedHeaders = { ...headers, ...(extraHeaders || {}) };
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    signal: AbortSignal.timeout(15000),
-    ...restOptions,
-    headers: mergedHeaders,
-  });
-  if (!res.ok) {
-    const bodyText = await res.text().catch(() => '');
-    let msg = `Ошибка ${res.status}`;
-    let parsedBody = null;
-    let wataError = {
-      httpStatus: res.status,
-      code: null,
-      message: null,
-      details: null,
-      validationErrors: null,
-      rawBody: bodyText,
-    };
+
+  let lastError = null;
+  // Попытки: 1 (основная) + retries (повторы)
+  for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const j = JSON.parse(bodyText);
-      parsedBody = j;
-      // WATA API error format: { error: { code, message, details, validationErrors } }
-      if (j.error) {
-        const e = j.error;
-        wataError.code = e.code || e.errorCode || null;
-        wataError.message = e.message || null;
-        wataError.details = e.details || null;
-        wataError.validationErrors = e.validationErrors || null;
-        if (e.validationErrors && e.validationErrors.length) msg = e.validationErrors.map(v => v.message).join('; ');
-        else if (e.details) msg = e.details;
-        else if (e.message) msg = e.message;
-      } else if (j.errors) { const errs = Object.values(j.errors).flat(); if (errs.length) msg = errs.join('; '); wataError.message = msg; }
-      else if (j.message) { msg = j.message; wataError.message = msg; }
-      else if (j.title) { msg = j.title; wataError.message = msg; }
-      else if (j.detail) { msg = j.detail; wataError.details = j.detail; }
-      else { msg = `Ошибка ${res.status}: ${bodyText.substring(0, 300)}`; }
-    } catch { msg = `Ошибка ${res.status}: ${bodyText.substring(0, 300)}`; }
-    // Make common errors user-friendly
-    if (res.status === 400) msg = `Ошибка запроса: ${msg}. Попробуйте другой товар.`;
-    if (res.status === 402) msg = 'Платёж отклонён. Проверьте данные карты или попробуйте другой способ оплаты.';
-    if (res.status === 422) msg = `Неверные данные заказа: ${msg}`;
-    if (res.status === 503 || res.status === 500) msg = 'Сервис временно недоступен. Попробуйте позже.';
-    const err = new Error(msg);
-    err.wataError = wataError;
-    err.parsedBody = parsedBody;
-    throw err;
+      if (attempt > 0) {
+        console.log(`[fetchWata] retry ${attempt}/${retries} for ${endpoint}`);
+        await new Promise(r => setTimeout(r, retryDelay));
+      }
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        signal: AbortSignal.timeout(timeout),
+        ...restOptions,
+        headers: mergedHeaders,
+      });
+      if (!res.ok) {
+        const bodyText = await res.text().catch(() => '');
+        let msg = `Ошибка ${res.status}`;
+        let parsedBody = null;
+        let wataError = {
+          httpStatus: res.status,
+          code: null,
+          message: null,
+          details: null,
+          validationErrors: null,
+          rawBody: bodyText,
+        };
+        try {
+          const j = JSON.parse(bodyText);
+          parsedBody = j;
+          if (j.error) {
+            const e = j.error;
+            wataError.code = e.code || e.errorCode || null;
+            wataError.message = e.message || null;
+            wataError.details = e.details || null;
+            wataError.validationErrors = e.validationErrors || null;
+            if (e.validationErrors && e.validationErrors.length) msg = e.validationErrors.map(v => v.message).join('; ');
+            else if (e.details) msg = e.details;
+            else if (e.message) msg = e.message;
+          } else if (j.errors) { const errs = Object.values(j.errors).flat(); if (errs.length) msg = errs.join('; '); wataError.message = msg; }
+          else if (j.message) { msg = j.message; wataError.message = msg; }
+          else if (j.title) { msg = j.title; wataError.message = msg; }
+          else if (j.detail) { msg = j.detail; wataError.details = j.detail; }
+          else { msg = `Ошибка ${res.status}: ${bodyText.substring(0, 300)}`; }
+        } catch { msg = `Ошибка ${res.status}: ${bodyText.substring(0, 300)}`; }
+        if (res.status === 400) msg = `Ошибка запроса: ${msg}. Попробуйте другой товар.`;
+        if (res.status === 402) msg = 'Платёж отклонён. Проверьте данные карты или попробуйте другой способ оплаты.';
+        if (res.status === 422) msg = `Неверные данные заказа: ${msg}`;
+        if (res.status === 503 || res.status === 500) msg = 'Сервис временно недоступен. Попробуйте позже.';
+        const err = new Error(msg);
+        err.wataError = wataError;
+        err.parsedBody = parsedBody;
+        // Ретраим только серверные ошибки (5xx) и 408/429 — не клиентские
+        if (retries > 0 && attempt < retries && (res.status >= 500 || res.status === 408 || res.status === 429)) {
+          lastError = err;
+          continue;
+        }
+        throw err;
+      }
+      return res.json();
+    } catch (e) {
+      // Сетевые ошибки и таймауты — ретраим, если ещё есть попытки
+      const isAbort = e.name === 'AbortError' || e.name === 'TimeoutError';
+      const isNetwork = e.message && (e.message.includes('Failed to fetch') || e.message.includes('NetworkError'));
+      if (retries > 0 && attempt < retries && (isAbort || isNetwork || e.wataError)) {
+        lastError = e;
+        continue;
+      }
+      throw e;
+    }
   }
-  return res.json();
+  throw lastError || new Error('Запрос не выполнен');
 }
 
 function formatPrice(p) {
@@ -3152,9 +3241,19 @@ function getDefaultRegionItems(items) {
 async function loadGiftCards() {
   const loading = document.getElementById('giftCardsLoading');
   const grid = document.getElementById('giftCardsGrid');
+  const container = document.getElementById('giftCardsContainer');
   const btn = document.getElementById('showAllRegionsBtn');
+
+  // Сбрасываем баннер с предыдущей попытки, если был
+  const oldBanner = container.querySelector('.api-fallback-banner');
+  if (oldBanner) oldBanner.remove();
+  loading.style.display = '';
+  grid.style.display = 'none';
+
   try {
-    const data = await fetchWata('/v3/vouchers/services');
+    // Этот эндпоинт обычно работает, но Worker иногда лагает —
+    // поэтому даём 25 сек и 2 повтора.
+    const data = await fetchWata('/v3/vouchers/services', { timeout: 25000, retries: 2, retryDelay: 1500 });
     const items = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
     const appleItems = items.filter(s => {
       const n = (s.name || s.title || '').toLowerCase();
@@ -3163,7 +3262,8 @@ async function loadGiftCards() {
     const toRender = appleItems.length ? appleItems : items.slice(0, 12);
     if (!toRender.length) throw new Error('empty');
     _allGiftCardItems = toRender;
-    loading.style.display = 'none'; grid.style.display = 'grid';
+    loading.style.display = 'none';
+    grid.style.display = 'grid';
     renderVoucherCards(getDefaultRegionItems(toRender), grid);
     if (toRender.length > getDefaultRegionItems(toRender).length) {
       btn.style.display = 'flex';
@@ -3171,7 +3271,22 @@ async function loadGiftCards() {
   } catch(e) {
     console.warn('Gift cards API unavailable, using mock:', e.message);
     _allGiftCardItems = MOCK_VOUCHERS;
-    loading.style.display = 'none'; grid.style.display = 'grid';
+    loading.style.display = 'none';
+    grid.style.display = 'grid';
+    // Вставляем баннер перед grid в контейнер
+    const errMsg = e.message || 'Сервис не отвечает';
+    // Создаём фиктивный контейнер, кладём в него баннер, переносим первый
+    // дочерний элемент в нужное место, чтобы кнопка retry осталась рабочей.
+    const tmp = document.createDocumentFragment();
+    const tmpHost = document.createElement('div');
+    tmp.appendChild(tmpHost);
+    renderApiFallbackBanner(tmpHost, {
+      title: 'Раздел загружен в резервном режиме',
+      text: `Платёжный шлюз WATA не отвечает на запрос гифт-карт (${escapeHtml(errMsg)}). Показан резервный список — клик по карточкам пока недоступен.`,
+      onRetry: () => loadGiftCards(),
+    });
+    const bannerEl = tmpHost.firstElementChild;
+    if (bannerEl) container.insertBefore(bannerEl, grid);
     renderVoucherCards(getDefaultRegionItems(MOCK_VOUCHERS), grid);
     if (MOCK_VOUCHERS.length > getDefaultRegionItems(MOCK_VOUCHERS).length) {
       btn.style.display = 'flex';
@@ -3267,9 +3382,34 @@ function renderGroupedVouchers(items, container) {
   });
 }
 
+/* ─── Хелпер: рендер баннера «API временно недоступно» с кнопкой повтора ─── */
+function renderApiFallbackBanner(container, { title, text, onRetry }) {
+  const banner = document.createElement('div');
+  banner.className = 'api-fallback-banner';
+  banner.innerHTML = `
+    <div class="banner-icon">⚠️</div>
+    <div class="banner-body">
+      <div class="banner-title">${title}</div>
+      <div class="banner-text">${text}</div>
+      <button class="banner-retry" type="button">↻ Повторить попытку</button>
+    </div>`;
+  banner.querySelector('.banner-retry').addEventListener('click', async (ev) => {
+    const btn = ev.currentTarget;
+    btn.disabled = true;
+    btn.textContent = '⏳ Загрузка...';
+    try { await onRetry(); } catch {}
+  });
+  container.appendChild(banner);
+}
+
 async function loadVouchers() {
   const loading = document.getElementById('vouchersLoading');
   const grid = document.getElementById('vouchersGrid');
+
+  // Сбрасываем состояние перед попыткой загрузки
+  loading.style.display = '';
+  grid.style.display = 'none';
+  grid.innerHTML = '';
 
   // Фильтр Apple — те позиции уходят в отдельную секцию gift cards
   const isApple = (s) => {
@@ -3277,24 +3417,22 @@ async function loadVouchers() {
     return n.includes('apple') || n.includes('app store') || n.includes('itunes') ||
            n.includes('icloud') || n.includes('ios');
   };
-
-  // Универсальный нормализатор ответа API
   const extractItems = (data) => {
     const raw = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
     return raw.filter(s => !isApple(s)).filter(s => s.isAvailable !== false);
   };
 
-  // Цепочка эндпоинтов: сначала пробуем основной /v3/vouchers,
-  // если упадёт (Worker может отвечать 405) — берём /v3/vouchers/services,
-  // оттуда же грузятся гифт-карты Apple, и там же лежат все остальные сервисы.
+  // Цепочка эндпоинтов: Worker лагает на /v3/vouchers*, поэтому даём
+  // длинный timeout (25 сек) и 2 повтора. Если оба эндпоинта мертвы —
+  // показываем баннер + mock-данные.
   const endpoints = ['/v3/vouchers', '/v3/vouchers/services'];
   let items = null;
   let lastError = null;
 
   for (const ep of endpoints) {
     try {
-      console.log('[loadVouchers] trying', ep);
-      const data = await fetchWata(ep);
+      console.log('[loadVouchers] trying', ep, '(timeout 25s, retries 2)');
+      const data = await fetchWata(ep, { timeout: 25000, retries: 2, retryDelay: 1500 });
       const extracted = extractItems(data);
       if (extracted.length) {
         console.log('[loadVouchers] success from', ep, '— items:', extracted.length);
@@ -3309,16 +3447,25 @@ async function loadVouchers() {
     }
   }
 
+  loading.style.display = 'none';
+  grid.style.display = '';
+  grid.classList.remove('services-grid');
+  grid.innerHTML = '';
+
   if (items && items.length) {
-    loading.style.display = 'none';
-    grid.style.display = '';
-    grid.classList.remove('services-grid');
     renderGroupedVouchers(items, grid);
     return;
   }
 
-  // Fallback — расширенный mock с пометкой «Скоро доступно»
+  // Fallback — показываем баннер с причиной + mock-данные
   console.warn('Vouchers API unavailable, using mock. Last error:', lastError?.message);
+  const errMsg = lastError?.message || 'Сервис не отвечает';
+  renderApiFallbackBanner(grid, {
+    title: 'Раздел загружен в резервном режиме',
+    text: `Платёжный шлюз WATA не отвечает на запрос ваучеров (${escapeHtml(errMsg)}). Показан резервный список — клик по карточкам пока недоступен. Мы автоматически восстановим раздел, как только шлюз вернётся в строй.`,
+    onRetry: () => loadVouchers(),
+  });
+
   const mockVouchers = [
     // PlayStation
     { id: 'psn-us',          name: 'PlayStation Network (US)',  category: 'PlayStation' },
@@ -3350,10 +3497,11 @@ async function loadVouchers() {
     // Shopping
     { id: 'amazon',          name: 'Amazon Gift Card',          category: 'Amazon' },
   ].map(m => ({ ...m, isMock: true }));
-  loading.style.display = 'none';
-  grid.style.display = '';
-  grid.classList.remove('services-grid');
-  renderGroupedVouchers(mockVouchers, grid);
+
+  // Создаём контейнер для групп ВНУТРИ grid (чтобы баннер был сверху)
+  const groupsHost = document.createElement('div');
+  grid.appendChild(groupsHost);
+  renderGroupedVouchers(mockVouchers, groupsHost);
 }
 
 /* ─── SERVICES (Games / TopUp) ─── */

@@ -1932,8 +1932,9 @@ body {
 <!-- ══ PAYMENT IFRAME MODAL ══ -->
 <div class="modal-backdrop" id="payModal" style="z-index:2000">
   <div class="modal" style="max-width:520px;height:90vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
-    <div class="modal-header" style="padding:16px 20px;flex-shrink:0">
-      <div class="modal-title">&#1054;&#1087;&#1083;&#1072;&#1090;&#1072;</div>
+    <div class="modal-header" style="padding:16px 20px;flex-shrink:0;display:flex;align-items:center;gap:10px">
+      <div class="modal-title" style="flex:1">&#1054;&#1087;&#1083;&#1072;&#1090;&#1072;</div>
+      <button id="payCheckStatusBtn" title="Проверить статус заказа" style="background:rgba(167,139,250,0.18);border:1px solid rgba(167,139,250,0.35);color:#C4B5FD;font-size:11px;font-weight:600;padding:6px 10px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap">&#x21BB; &#1057;&#1090;&#1072;&#1090;&#1091;&#1089;</button>
       <button class="modal-close" id="payClose">&#x2715;</button>
     </div>
     <iframe id="payIframe" src="" style="flex:1;border:none;width:100%"></iframe>
@@ -2281,18 +2282,32 @@ async function fetchWata(endpoint, options = {}) {
   if (!res.ok) {
     const bodyText = await res.text().catch(() => '');
     let msg = `Ошибка ${res.status}`;
+    let parsedBody = null;
+    let wataError = {
+      httpStatus: res.status,
+      code: null,
+      message: null,
+      details: null,
+      validationErrors: null,
+      rawBody: bodyText,
+    };
     try {
       const j = JSON.parse(bodyText);
-      // WATA API error format: { error: { message, details, validationErrors } }
+      parsedBody = j;
+      // WATA API error format: { error: { code, message, details, validationErrors } }
       if (j.error) {
         const e = j.error;
+        wataError.code = e.code || e.errorCode || null;
+        wataError.message = e.message || null;
+        wataError.details = e.details || null;
+        wataError.validationErrors = e.validationErrors || null;
         if (e.validationErrors && e.validationErrors.length) msg = e.validationErrors.map(v => v.message).join('; ');
         else if (e.details) msg = e.details;
         else if (e.message) msg = e.message;
-      } else if (j.errors) { const errs = Object.values(j.errors).flat(); if (errs.length) msg = errs.join('; '); }
-      else if (j.message) { msg = j.message; }
-      else if (j.title) { msg = j.title; }
-      else if (j.detail) { msg = j.detail; }
+      } else if (j.errors) { const errs = Object.values(j.errors).flat(); if (errs.length) msg = errs.join('; '); wataError.message = msg; }
+      else if (j.message) { msg = j.message; wataError.message = msg; }
+      else if (j.title) { msg = j.title; wataError.message = msg; }
+      else if (j.detail) { msg = j.detail; wataError.details = j.detail; }
       else { msg = `Ошибка ${res.status}: ${bodyText.substring(0, 300)}`; }
     } catch { msg = `Ошибка ${res.status}: ${bodyText.substring(0, 300)}`; }
     // Make common errors user-friendly
@@ -2300,7 +2315,10 @@ async function fetchWata(endpoint, options = {}) {
     if (res.status === 402) msg = 'Платёж отклонён. Проверьте данные карты или попробуйте другой способ оплаты.';
     if (res.status === 422) msg = `Неверные данные заказа: ${msg}`;
     if (res.status === 503 || res.status === 500) msg = 'Сервис временно недоступен. Попробуйте позже.';
-    throw new Error(msg);
+    const err = new Error(msg);
+    err.wataError = wataError;
+    err.parsedBody = parsedBody;
+    throw err;
   }
   return res.json();
 }
@@ -2311,6 +2329,144 @@ function formatPrice(p) {
 }
 function genOrderId() {
   return 'TAB-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+}
+
+/* ─── PRICE REFRESH (защита от устаревшего minPrice) ─────────────────────
+   Цены WATA для зарубежных гифт-карт привязаны к курсу валют и могут
+   меняться. Если отправить amount < актуального minPrice — платёж
+   отклоняется. Поэтому перед POST мы запрашиваем свежие данные.
+─────────────────────────────────────────────────────────────────────── */
+
+/** Возвращает свежий minPrice для конкретного ваучера или null. */
+async function refreshVoucherMinPrice(serviceId, voucherId) {
+  if (!serviceId || voucherId === undefined || voucherId === null) return null;
+  try {
+    const data = await fetchWata(`/v3/vouchers/${serviceId}`);
+    const items = data.vouchers || data.products || (Array.isArray(data) ? data : []);
+    const target = items.find(v => String(v.id) === String(voucherId));
+    if (!target) return null;
+    const raw = target.minPrice ?? target.price ?? null;
+    const num = Number(raw);
+    return (isNaN(num) || num <= 0) ? null : num;
+  } catch (e) {
+    console.warn('[refreshVoucherMinPrice] failed:', e.message);
+    return null;
+  }
+}
+
+/** Возвращает свежий minPrice для конкретного товара топапа или null. */
+async function refreshTopupMinPrice(topupId, productId) {
+  if (!topupId || productId === undefined || productId === null) return null;
+  try {
+    const data = await fetchWata(`/v3/topup/${topupId}`);
+    const products = data.details?.products || data.products || [];
+    const target = products.find(p => String(p.id) === String(productId));
+    if (!target) return null;
+    const raw = target.minPrice ?? target.price ?? target.amount ?? null;
+    const num = Number(raw);
+    return (isNaN(num) || num <= 0) ? null : num;
+  } catch (e) {
+    console.warn('[refreshTopupMinPrice] failed:', e.message);
+    return null;
+  }
+}
+
+/* ─── DETAILED ERROR DISPLAY ─────────────────────────────────────────── */
+
+/**
+ * Показывает структурированную ошибку платежа в Step 4.
+ * @param {Object} opts
+ * @param {string} opts.title - Заголовок (напр. "Платёж отклонён банком")
+ * @param {string} opts.message - Основное сообщение для пользователя
+ * @param {string|null} [opts.code] - Код ошибки от WATA (напр. "INSUFFICIENT_FUNDS")
+ * @param {string|null} [opts.hint] - Подсказка пользователю что делать
+ * @param {Object|string|null} [opts.technical] - Технические данные (JSON или строка)
+ */
+function showDetailedError({ title, message, code, hint, technical }) {
+  const techStr = technical
+    ? (typeof technical === 'string' ? technical : JSON.stringify(technical, null, 2))
+    : null;
+  const techId = 'tech_' + Date.now();
+  const html = `
+    <div style="text-align:left">
+      <div style="font-size:15px;font-weight:700;color:#FF453A;margin-bottom:10px;text-align:center">
+        ${title || 'Ошибка'}
+      </div>
+      ${message ? `<div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5;text-align:center">${escapeHtml(message)}</div>` : ''}
+      ${code ? `<div style="display:inline-block;background:rgba(255,69,58,0.15);border:1px solid rgba(255,69,58,0.35);border-radius:8px;padding:4px 10px;font-family:'SF Mono',monospace;font-size:11px;color:#FF6B5B;margin-bottom:12px">code: ${escapeHtml(String(code))}</div>` : ''}
+      ${hint ? `<div style="background:rgba(167,139,250,0.10);border:1px solid rgba(167,139,250,0.25);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:12px">💡 ${escapeHtml(hint)}</div>` : ''}
+      ${techStr ? `
+        <button onclick="(function(){var el=document.getElementById('${techId}');el.style.display=el.style.display==='none'?'block':'none';})()"
+          style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:var(--text-tertiary);font-size:11px;padding:6px 10px;border-radius:8px;cursor:pointer;font-family:inherit;width:100%;margin-bottom:8px">
+          🔧 Показать технические детали
+        </button>
+        <pre id="${techId}" style="display:none;font-size:10px;font-family:'SF Mono',monospace;background:rgba(0,0,0,0.4);border-radius:8px;padding:10px;max-height:240px;overflow:auto;white-space:pre-wrap;word-break:break-all;color:#94a3b8;margin:0">${escapeHtml(techStr)}</pre>
+      ` : ''}
+    </div>
+  `;
+  document.getElementById('wmErrorMsg').innerHTML = html;
+  showWmStep(4);
+}
+
+/** Простое HTML-экранирование для безопасной вставки данных от API. */
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Возвращает читаемую подсказку пользователю на основе кода ошибки.
+ * Покрывает типичные сценарии WATA / эквайеров.
+ */
+function hintForErrorCode(code, httpStatus, message) {
+  const c = String(code || '').toUpperCase();
+  const m = String(message || '').toLowerCase();
+
+  // Типичная фраза WATA — «Невозможно провести платёж» — означает отказ эквайера/банка
+  if (m.includes('невозможно провести платёж') || m.includes('невозможно провести платеж') ||
+      m.includes('cannot process') || m.includes('payment failed')) {
+    return 'Платёжная система не смогла провести транзакцию. Возможные причины: '
+         + 'банк-эмитент карты заблокировал платёж (часто для зарубежных гифт-карт), '
+         + 'недостаточно средств, превышен суточный лимит, или карта не поддерживает '
+         + 'интернет-платежи. Попробуйте другую карту или СБП.';
+  }
+  if (c.includes('INSUFFICIENT') || m.includes('недостаточ') || m.includes('insufficient')) {
+    return 'На карте недостаточно средств. Пополните баланс или используйте другую карту.';
+  }
+  if (c.includes('DECLINED') || c.includes('REJECTED') || m.includes('отклон') || m.includes('declined')) {
+    return 'Платёж отклонён банком-эмитентом. Возможные причины: лимит на интернет-операции, '
+         + 'блокировка для зарубежных платежей, антифрод. Попробуйте другую карту или СБП.';
+  }
+  if (c.includes('AMOUNT') || m.includes('amount') || m.includes('сумм')) {
+    return 'Сумма платежа не прошла проверку. Возможно, цена товара изменилась — '
+         + 'попробуйте обновить страницу и оформить заказ заново.';
+  }
+  if (c.includes('UNAVAILABLE') || c.includes('OUT_OF_STOCK') || m.includes('недоступ') || m.includes('unavailable')) {
+    return 'Товар временно недоступен. Попробуйте другой номинал или регион.';
+  }
+  if (c.includes('TIMEOUT') || m.includes('timeout') || m.includes('таймаут')) {
+    return 'Истекло время ожидания ответа от платёжной системы. Попробуйте ещё раз.';
+  }
+  if (c.includes('LIMIT') || m.includes('лимит') || m.includes('limit')) {
+    return 'Превышен лимит на операцию. Проверьте дневные/месячные лимиты вашей карты или попробуйте другую.';
+  }
+  if (c.includes('FRAUD') || c.includes('SECURITY') || m.includes('фрод') || m.includes('fraud') || m.includes('подозрит')) {
+    return 'Антифрод-система банка заблокировала платёж. Свяжитесь с банком для разблокировки или используйте другую карту.';
+  }
+  if (c.includes('3DS') || m.includes('3-d secure') || m.includes('3ds')) {
+    return 'Не удалось пройти проверку 3-D Secure. Проверьте, не введён ли неверный SMS-код, и попробуйте снова.';
+  }
+  if (httpStatus === 402) {
+    return 'Платёжная система отклонила транзакцию. Проверьте данные карты, лимиты, или попробуйте другой способ оплаты.';
+  }
+  if (httpStatus === 422 || httpStatus === 400) {
+    return 'Сервер платежей не принял параметры заказа. Попробуйте обновить страницу и оформить покупку заново.';
+  }
+  return 'Попробуйте оформить заказ ещё раз или выберите другой товар. Если проблема повторяется — свяжитесь с поддержкой.';
 }
 
 /* ══════════════════════════════════════════
@@ -2370,7 +2526,9 @@ async function openVoucherDetail(id, name) {
   try {
     const data = await fetchWata(`/v3/vouchers/${id}`);
     const items = data.vouchers || data.products || (Array.isArray(data) ? data : []);
-    vouchers = items.filter(v => v.isAvailable !== false);
+    vouchers = items.filter(v => v.isAvailable !== false)
+      // Сохраняем serviceId — нужен для refresh minPrice перед платежом
+      .map(v => ({ ...v, _serviceId: id }));
     if (data.details?.description) document.getElementById('wmDesc').textContent = data.details.description;
   } catch(e) {
     console.warn('Voucher API error:', e.message);
@@ -2381,7 +2539,7 @@ async function openVoucherDetail(id, name) {
     const mock = { 'apple-500':549,'apple-1000':1099,'apple-1500':1649,'apple-2000':2199,'apple-3000':3299,'apple-5000':5499,'icloud-50':169,'icloud-200':269,'icloud-2tb':899 };
     const p = mock[id] || null;
     // If price unknown — let user enter it manually (minPrice: null triggers amount input)
-    vouchers = [{ id: id, name: name, minPrice: p, isAvailable: true }];
+    vouchers = [{ id: id, name: name, minPrice: p, isAvailable: true, _serviceId: id }];
   }
 
   renderVoucherItems(vouchers);
@@ -2422,9 +2580,10 @@ function renderVoucherItems(vouchers) {
     row.querySelector('.btn-buy').addEventListener('click', () => {
       // Если есть фикс-цена — отдаём уже наценённую цену.
       // Если ручной ввод — применяем наценку к введённой сумме.
+      const isManual = !price;
       const finalPrice = price || (amountInput ? applyMarkup(Number(amountInput.value)) : 0);
       if (!finalPrice || finalPrice <= 0) { alert('Введите сумму'); return; }
-      startVoucherPurchase({ ...v, minPrice: finalPrice });
+      startVoucherPurchase({ ...v, minPrice: finalPrice, _isManualAmount: isManual });
     });
 
     li.insertBefore(row, li.firstChild);
@@ -2442,15 +2601,44 @@ async function startVoucherPurchase(voucher) {
   const orderId = genOrderId();
   const vid = parseInt(voucher.id, 10);
   const count = 1;
-  // amount: minPrice * count (required, must be >= minPrice*count per WATA docs)
-  const voucherPrice = voucher.minPrice ?? voucher.price ?? null;
-  const voucherAmount = voucherPrice ? Math.ceil(Number(voucherPrice) * count * 100) / 100 : null;
 
   if (isNaN(vid)) {
-    document.getElementById('wmErrorMsg').textContent = 'Этот товар недоступен для покупки через API.';
-    showWmStep(4);
+    showDetailedError({
+      title: 'Товар недоступен',
+      message: 'Этот ваучер не поддерживается для покупки через API.',
+      hint: 'Выберите другой номинал из списка.',
+    });
     return;
   }
+
+  // ─── Защита от устаревшего minPrice ────────────────────────────────
+  // Берём свежий minPrice с сервера. Это защищает от ситуации, когда
+  // курс валюты для зарубежных гифт-карт изменился и старая цена
+  // (которая могла быть на странице несколько минут) уже < нового minPrice.
+  // Если в voucher есть _isManualAmount (ручной ввод) — пропускаем refresh,
+  // т.к. там сумма берётся из инпута пользователя.
+  let basePrice = voucher.minPrice ?? voucher.price ?? null;
+  const isManualAmount = voucher._isManualAmount === true;
+
+  if (!isManualAmount && voucher._serviceId) {
+    const fresh = await refreshVoucherMinPrice(voucher._serviceId, voucher.id);
+    if (fresh !== null) {
+      const freshWithMarkup = applyMarkup(fresh);
+      // Берём максимум из старой и свежей наценённой — защищает от
+      // снижения цены (сохранит нашу наценку), а если курс вырос —
+      // подстроится под новый minPrice.
+      const safe = Math.max(Number(basePrice) || 0, freshWithMarkup);
+      console.log('[WATA] minPrice refresh:', {
+        old: basePrice, freshFromApi: fresh, freshWithMarkup, finalUsed: safe,
+      });
+      basePrice = safe;
+    }
+  }
+
+  // Округление вверх до копеек — на всякий случай, если minPrice окажется
+  // дробным числом с плавающей точкой и amount < minPrice из-за округления.
+  const voucherAmount = basePrice ? Math.ceil(Number(basePrice) * count * 100) / 100 : null;
+
   if (!voucherAmount || voucherAmount <= 0) {
     showWmStep(1);
     alert('Введите сумму в поле ниже и нажмите «Купить»');
@@ -2474,8 +2662,14 @@ async function startVoucherPurchase(voucher) {
     wmCurrentOrder = { orderId, type: 'voucher' };
     openPaymentWindow(result.paymentLink, orderId, 'voucher');
   } catch(e) {
-    document.getElementById('wmErrorMsg').textContent = e.message;
-    showWmStep(4);
+    const w = e.wataError || {};
+    showDetailedError({
+      title: 'Не удалось создать платёж',
+      message: e.message,
+      code: w.code || (w.httpStatus ? `HTTP ${w.httpStatus}` : null),
+      hint: hintForErrorCode(w.code, w.httpStatus, e.message),
+      technical: { request: body, response: e.parsedBody || w.rawBody || '(нет тела ответа)' },
+    });
   }
 }
 
@@ -2616,9 +2810,10 @@ function renderTopupItems(products, gameId) {
     row.querySelector('.btn-buy').addEventListener('click', () => {
       // Если есть фикс-цена — она уже с наценкой (через getProductPrice).
       // Если ручной ввод — применяем наценку к введённой сумме.
+      const isManual = !price;
       const finalAmount = price || (amountInput ? applyMarkup(Number(amountInput.value)) : 0);
       if (!finalAmount || finalAmount <= 0) { alert('Введите сумму пополнения'); return; }
-      startTopupPurchase({ ...p, _resolvedAmount: finalAmount }, gameId);
+      startTopupPurchase({ ...p, _resolvedAmount: finalAmount, _isManualAmount: isManual }, gameId);
     });
 
     li.insertBefore(row, li.firstChild);
@@ -2648,9 +2843,28 @@ async function startTopupPurchase(product, gameId) {
 
   const orderId = genOrderId();
   // Per WATA docs: amount must be minPrice <= amount <= minPrice*1.5
-  // Use _resolvedAmount if manually entered, otherwise use minPrice
-  const resolvedAmount = product._resolvedAmount ?? product.minPrice ?? product.price ?? null;
-  const numAmount = Number(resolvedAmount);
+  let resolvedAmount = product._resolvedAmount ?? product.minPrice ?? product.price ?? null;
+  let numAmount = Number(resolvedAmount);
+
+  // ─── Защита от устаревшего minPrice ──────────────────────────────
+  // Освежаем цену для фикс-номиналов (но не для ручного ввода — там
+  // сумма от пользователя, не привязана к minPrice конкретного товара).
+  if (!product._isManualAmount && gameId && product.id !== undefined) {
+    const fresh = await refreshTopupMinPrice(gameId, product.id);
+    if (fresh !== null) {
+      const freshWithMarkup = applyMarkup(fresh);
+      // Берём максимум: защищает наценку, если цена упала, и подстраивает
+      // amount, если minPrice вырос (например, курс валюты изменился).
+      const safe = Math.max(Number(numAmount) || 0, freshWithMarkup);
+      console.log('[WATA] topup minPrice refresh:', {
+        old: numAmount, freshFromApi: fresh, freshWithMarkup, finalUsed: safe,
+      });
+      numAmount = safe;
+    }
+  }
+  // Округление вверх до копеек на случай дробной цены
+  numAmount = Math.ceil(Number(numAmount) * 100) / 100;
+
   if (isNaN(numAmount) || numAmount <= 0) {
     showWmStep(1);
     alert('Не удалось определить сумму. Введите сумму вручную.');
@@ -2682,11 +2896,14 @@ async function startTopupPurchase(product, gameId) {
     wmCurrentOrder = { orderId, type: 'topup' };
     openPaymentWindow(result.paymentLink, orderId, 'topup');
   } catch(e) {
-    const errDetail = e.message + '\n\n— ОТПРАВЛЕНО В API —\n' + JSON.stringify(body, null, 2);
-    document.getElementById('wmErrorMsg').innerHTML =
-      '<div style="text-align:left;font-size:11px;font-family:monospace;background:rgba(0,0,0,0.4);border-radius:8px;padding:10px;max-height:260px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;color:#f87171">' +
-      errDetail.replace(/</g,'&lt;') + '</div>';
-    showWmStep(4);
+    const w = e.wataError || {};
+    showDetailedError({
+      title: 'Не удалось создать платёж',
+      message: e.message,
+      code: w.code || (w.httpStatus ? `HTTP ${w.httpStatus}` : null),
+      hint: hintForErrorCode(w.code, w.httpStatus, e.message),
+      technical: { request: body, response: e.parsedBody || w.rawBody || '(нет тела ответа)' },
+    });
   }
 }
 
@@ -2699,48 +2916,166 @@ function openPaymentWindow(paymentLink, orderId, type) {
   startPolling(orderId, type);
 }
 
-document.getElementById('payClose').addEventListener('click', () => {
-  document.getElementById('payModal').classList.remove('open');
-  document.getElementById('payIframe').src = '';
+document.getElementById('payClose').addEventListener('click', async () => {
+  // При закрытии iframe пользователем — делаем финальную проверку статуса.
+  // Если платёж уже отбился — покажем подробную ошибку.
+  if (wmCurrentOrder) {
+    const { orderId, type } = wmCurrentOrder;
+    document.getElementById('payModal').classList.remove('open');
+    document.getElementById('payIframe').src = '';
+    await checkOrderStatusOnce(orderId, type, /*silentIfPending*/ true);
+  } else {
+    document.getElementById('payModal').classList.remove('open');
+    document.getElementById('payIframe').src = '';
+  }
 });
 
-/* ─── POLLING ─── */
+// Кнопка «Статус» в шапке iframe-модалки — ручная проверка по требованию пользователя
+document.getElementById('payCheckStatusBtn').addEventListener('click', async () => {
+  if (!wmCurrentOrder) return;
+  const btn = document.getElementById('payCheckStatusBtn');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '⏳';
+  btn.disabled = true;
+  await checkOrderStatusOnce(wmCurrentOrder.orderId, wmCurrentOrder.type, /*silentIfPending*/ false);
+  btn.innerHTML = orig;
+  btn.disabled = false;
+});
+
+// postMessage от iframe платёжного шлюза — некоторые шлюзы шлют статусы туда.
+// Если получили event с упоминанием fail/success — сразу делаем сверку через API.
+window.addEventListener('message', async (ev) => {
+  if (!wmCurrentOrder) return;
+  const data = ev.data;
+  if (!data) return;
+  const text = (typeof data === 'string' ? data : JSON.stringify(data)).toLowerCase();
+  if (/(fail|reject|declin|cancel|error|success|paid|complete)/i.test(text)) {
+    console.log('[WATA postMessage]', ev.origin, data);
+    await checkOrderStatusOnce(wmCurrentOrder.orderId, wmCurrentOrder.type, /*silentIfPending*/ true);
+  }
+});
+
+/* ─── ИЗВЛЕЧЕНИЕ ПРИЧИНЫ ОТКАЗА ИЗ ОТВЕТА ОРДЕРА ──────────────────────── */
+function extractFailDetails(data) {
+  // WATA возвращает причину отказа в разных полях в зависимости от версии API
+  const reason = data.failReason || data.failureReason || data.reason ||
+                 data.errorMessage || data.error?.message || data.error?.details ||
+                 data.declineReason || data.decline_reason ||
+                 data.transactionError || data.message || null;
+  const code = data.errorCode || data.error?.code || data.failCode ||
+               data.declineCode || data.decline_code || data.transactionStatus || null;
+  return { reason, code };
+}
+
+/* ─── ОДНОРАЗОВАЯ ПРОВЕРКА СТАТУСА ─────────────────────────────────────── */
+async function checkOrderStatusOnce(orderId, type, silentIfPending) {
+  const endpoint = type === 'voucher'
+    ? `/v3/vouchers/order/${orderId}`
+    : `/v3/topup/orders/${orderId}`;
+  try {
+    const data = await fetchWata(endpoint);
+    console.log('[WATA] manual status check:', JSON.stringify(data, null, 2));
+
+    const statusRaw = data.status || data.paymentStatus || data.orderStatus || '';
+    const status = String(statusRaw).toLowerCase();
+    const isSuccess = status === 'success' || status === 'completed' || status === 'paid';
+    const isFail = status === 'fail' || status === 'failed' || status === 'rejected' ||
+                   status === 'cancelled' || status === 'canceled' || status === 'declined';
+
+    if (isSuccess) {
+      if (wmPollTimer) { clearInterval(wmPollTimer); wmPollTimer = null; }
+      const codes = data.vouchers || data.codes || [];
+      document.getElementById('wmCodeResult').textContent =
+        codes.length ? codes.join(' | ') : 'Код будет отправлен на email';
+      showWmStep(3);
+    } else if (isFail) {
+      if (wmPollTimer) { clearInterval(wmPollTimer); wmPollTimer = null; }
+      const { reason, code } = extractFailDetails(data);
+      showDetailedError({
+        title: 'Платёж не прошёл',
+        message: reason || 'Платёжная система отклонила транзакцию.',
+        code: code,
+        hint: hintForErrorCode(code, null, reason),
+        technical: data,
+      });
+    } else if (!silentIfPending) {
+      // Платёж ещё в процессе — сообщим, но не закрываем iframe
+      alert('Платёж ещё обрабатывается. Подождите несколько секунд.\n\nТекущий статус: ' + (statusRaw || 'pending'));
+    }
+  } catch (e) {
+    if (!silentIfPending) {
+      alert('Не удалось получить статус заказа: ' + e.message);
+    }
+    console.warn('[checkOrderStatusOnce] failed:', e.message);
+  }
+}
+
+/* ─── POLLING (адаптивная частота) ─────────────────────────────────────── */
 function startPolling(orderId, type) {
   if (wmPollTimer) clearInterval(wmPollTimer);
   let attempts = 0;
-  const maxAttempts = 60; // 5 min
+  const maxAttempts = 90; // ~5 минут с учётом ускоренного старта
 
-  wmPollTimer = setInterval(async () => {
+  // Первые 15 опросов — каждую секунду (быстро ловим fail/success),
+  // дальше — каждые 5 секунд.
+  let interval = 1000;
+
+  const tick = async () => {
     attempts++;
     if (attempts > maxAttempts) {
       clearInterval(wmPollTimer);
+      wmPollTimer = null;
       return;
     }
+    // Переключаем на медленный опрос после первых 15 попыток
+    if (attempts === 15) {
+      clearInterval(wmPollTimer);
+      interval = 5000;
+      wmPollTimer = setInterval(tick, interval);
+    }
+
     try {
       const endpoint = type === 'voucher'
         ? `/v3/vouchers/order/${orderId}`
         : `/v3/topup/orders/${orderId}`;
       const data = await fetchWata(endpoint);
 
-      if (data.status === 'Success') {
+      const statusRaw = data.status || data.paymentStatus || data.orderStatus || '';
+      const status = String(statusRaw).toLowerCase();
+      const isSuccess = status === 'success' || status === 'completed' || status === 'paid';
+      const isFail = status === 'fail' || status === 'failed' || status === 'rejected' ||
+                     status === 'cancelled' || status === 'canceled' || status === 'declined';
+
+      if (isSuccess) {
         clearInterval(wmPollTimer);
+        wmPollTimer = null;
         document.getElementById('payModal').classList.remove('open');
         document.getElementById('payIframe').src = '';
-        // show code
-        const codes = data.vouchers || [];
-        document.getElementById('wmCodeResult').textContent = codes.length ? codes.join(' | ') : 'Код будет отправлен на email';
+        const codes = data.vouchers || data.codes || [];
+        document.getElementById('wmCodeResult').textContent =
+          codes.length ? codes.join(' | ') : 'Код будет отправлен на email';
         showWmStep(3);
-      } else if (data.status === 'Fail') {
+      } else if (isFail) {
         clearInterval(wmPollTimer);
+        wmPollTimer = null;
         document.getElementById('payModal').classList.remove('open');
         document.getElementById('payIframe').src = '';
-        document.getElementById('wmErrorMsg').textContent = 'Платёж не прошёл. Попробуйте ещё раз.';
-        showWmStep(4);
+
+        const { reason, code } = extractFailDetails(data);
+        showDetailedError({
+          title: 'Платёж не прошёл',
+          message: reason || 'Платёж был отменён или отклонён платёжной системой.',
+          code: code,
+          hint: hintForErrorCode(code, null, reason),
+          technical: data,
+        });
       }
     } catch(e) {
       console.warn('Poll error:', e.message);
     }
-  }, 5000);
+  };
+
+  wmPollTimer = setInterval(tick, interval);
 }
 
 /* ─── GIFT CARDS (Vouchers) ─── */

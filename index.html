@@ -628,6 +628,36 @@ body {
   gap: 12px;
 }
 
+/* ─── Voucher category groups ─── */
+.vouchers-container { display: flex; flex-direction: column; gap: 28px; }
+.vouchers-group { display: flex; flex-direction: column; gap: 12px; }
+.vouchers-group-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+}
+.vouchers-group-title::before {
+  content: '';
+  width: 4px;
+  height: 14px;
+  background: linear-gradient(180deg, #A78BFA, #7C3AED);
+  border-radius: 2px;
+}
+.vouchers-group-count {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  margin-left: auto;
+}
+
 /* Show all regions button */
 .btn-show-all-regions {
   display: flex;
@@ -1029,6 +1059,60 @@ body {
   margin-top: 10px;
 }
 .btn-admin-save:hover { opacity: 0.9; transform: scale(1.02); }
+
+/* ─── Admin markup input ─── */
+.admin-markup-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 4px 4px 4px 14px;
+}
+.admin-markup-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px 0;
+  outline: none;
+  font-family: inherit;
+  min-width: 0;
+}
+.admin-markup-input::-webkit-outer-spin-button,
+.admin-markup-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.admin-markup-input[type=number] { -moz-appearance: textfield; }
+.admin-markup-suffix {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  padding-right: 4px;
+}
+.admin-markup-row .btn-markup-save {
+  background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.admin-markup-row .btn-markup-save:hover { opacity: 0.9; transform: scale(1.03); }
+.admin-markup-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+  margin-top: 8px;
+}
+.admin-markup-hint b { color: var(--accent-purple); font-weight: 700; }
 
 /* ═══════════════════ TOS SECTION ═══════════════════ */
 .tos-card {
@@ -1873,6 +1957,19 @@ body {
     </div>
 
     <div class="admin-section">
+      <div class="admin-section-title">Наценка на товары</div>
+      <div class="admin-markup-row">
+        <input class="admin-markup-input" id="adminMarkupInput" type="number" step="0.1" min="0" max="100" placeholder="0">
+        <span class="admin-markup-suffix">%</span>
+        <button class="btn-markup-save" id="saveMarkupBtn">Сохранить</button>
+      </div>
+      <div class="admin-markup-hint">
+        Текущая наценка: <b id="currentMarkupLabel">0%</b><br>
+        Применяется ко всем ценам из API WATA (ваучеры, пополнения, гифт-карты). Пример: при наценке <b>1%</b> товар за 100 ₽ будет продаваться за <b>101 ₽</b>.
+      </div>
+    </div>
+
+    <div class="admin-section">
       <div class="admin-section-title">Пользовательское соглашение</div>
       <textarea class="admin-tos-area" id="adminTosText" placeholder="Введите текст пользовательского соглашения...&#10;&#10;Используйте обычный текст, переносы строк сохраняются."></textarea>
       <button class="btn-admin-save" id="saveTosBtn">💾 Сохранить соглашение</button>
@@ -1910,6 +2007,30 @@ function loadCerts() { try { return JSON.parse(localStorage.getItem('appbox_cert
 function saveCerts(data) { localStorage.setItem('appbox_certs', JSON.stringify(data)); }
 function loadTos() { return localStorage.getItem('appbox_tos') || ''; }
 function saveTos(text) { localStorage.setItem('appbox_tos', text); }
+
+/* ─── MARKUP (наценка на товары из WATA API) ─── */
+function loadMarkup() {
+  const v = parseFloat(localStorage.getItem('appbox_markup_percent'));
+  return (isNaN(v) || v < 0) ? 0 : v;
+}
+function saveMarkup(percent) {
+  const v = Math.max(0, Number(percent) || 0);
+  localStorage.setItem('appbox_markup_percent', String(v));
+}
+/**
+ * Применяет наценку к цене товара из API WATA.
+ * Возвращает цену с учётом процента из админки, округлённую до 2 знаков.
+ * Если наценка = 0 — возвращает исходную цену без изменений.
+ */
+function applyMarkup(price) {
+  if (price === null || price === undefined || price === '') return price;
+  const num = Number(price);
+  if (isNaN(num) || num <= 0) return price;
+  const pct = loadMarkup();
+  if (pct <= 0) return num;
+  // Округляем до 2 знаков (копейки), чтобы платежи были корректными
+  return Math.round(num * (1 + pct / 100) * 100) / 100;
+}
 
 /* ─── DEFAULT CERTS ─── */
 const DEFAULT_CERTS = [];
@@ -2270,7 +2391,8 @@ function renderVoucherItems(vouchers) {
   const ul = document.getElementById('wmCodesList');
   ul.innerHTML = '';
   vouchers.forEach(v => {
-    const price = v.minPrice ?? v.price ?? null;
+    const rawPrice = v.minPrice ?? v.price ?? null;
+    const price = rawPrice !== null ? applyMarkup(rawPrice) : null;
     const li = document.createElement('li');
     li.className = 'product-code-item';
     li.style.flexDirection = 'column';
@@ -2298,7 +2420,9 @@ function renderVoucherItems(vouchers) {
     }
 
     row.querySelector('.btn-buy').addEventListener('click', () => {
-      const finalPrice = price || (amountInput ? Number(amountInput.value) : 0);
+      // Если есть фикс-цена — отдаём уже наценённую цену.
+      // Если ручной ввод — применяем наценку к введённой сумме.
+      const finalPrice = price || (amountInput ? applyMarkup(Number(amountInput.value)) : 0);
       if (!finalPrice || finalPrice <= 0) { alert('Введите сумму'); return; }
       startVoucherPurchase({ ...v, minPrice: finalPrice });
     });
@@ -2452,7 +2576,9 @@ function getProductPrice(p) {
   // Per WATA docs: show minPrice (minimum sale price) to customer
   const raw = p.minPrice ?? p.price ?? p.amount ?? null;
   const num = Number(raw);
-  return (!isNaN(num) && num > 0) ? num : null;
+  if (isNaN(num) || num <= 0) return null;
+  // Применяем наценку из админ-панели
+  return applyMarkup(num);
 }
 
 function renderTopupItems(products, gameId) {
@@ -2488,7 +2614,9 @@ function renderTopupItems(products, gameId) {
     }
 
     row.querySelector('.btn-buy').addEventListener('click', () => {
-      const finalAmount = price || (amountInput ? Number(amountInput.value) : 0);
+      // Если есть фикс-цена — она уже с наценкой (через getProductPrice).
+      // Если ручной ввод — применяем наценку к введённой сумме.
+      const finalAmount = price || (amountInput ? applyMarkup(Number(amountInput.value)) : 0);
       if (!finalAmount || finalAmount <= 0) { alert('Введите сумму пополнения'); return; }
       startTopupPurchase({ ...p, _resolvedAmount: finalAmount }, gameId);
     });
@@ -2717,6 +2845,93 @@ async function loadGiftCards() {
 }
 
 /* ─── VOUCHERS (Gift Cards & Service Access) ─── */
+
+/**
+ * Нормализует категорию ваучера для группировки в UI.
+ * WATA API может возвращать разные названия категорий, нормализуем их.
+ */
+function normalizeVoucherCategory(item) {
+  const rawCat = (item.category || item.categoryName || item.group || '').trim();
+  const name = (item.name || item.title || '').toLowerCase();
+
+  // Если API явно дал категорию — используем её
+  if (rawCat) return rawCat;
+
+  // Иначе — определяем по названию
+  if (/playstation|\bpsn\b|\bps\s?(plus|4|5)\b/i.test(name)) return 'PlayStation';
+  if (/\bxbox\b|game\s?pass/i.test(name)) return 'Xbox';
+  if (/nintendo|eshop|switch/i.test(name)) return 'Nintendo';
+  if (/\bsteam\b/i.test(name)) return 'Steam';
+  if (/netflix/i.test(name)) return 'Стриминг · Видео';
+  if (/spotify|deezer|tidal|apple\s?music/i.test(name)) return 'Музыка';
+  if (/youtube|twitch/i.test(name)) return 'Стриминг · Видео';
+  if (/discord|nitro/i.test(name)) return 'Подписки';
+  if (/google\s?play/i.test(name)) return 'Google Play';
+  if (/amazon/i.test(name)) return 'Amazon';
+  if (/ebay|walmart|target/i.test(name)) return 'Магазины';
+  if (/visa|mastercard|prepaid/i.test(name)) return 'Предоплаченные карты';
+  return 'Прочее';
+}
+
+/** Фиксированный порядок групп в UI (более популярные — сверху) */
+const VOUCHER_CATEGORY_ORDER = [
+  'PlayStation',
+  'Xbox',
+  'Nintendo',
+  'Steam',
+  'Google Play',
+  'Стриминг · Видео',
+  'Музыка',
+  'Подписки',
+  'Amazon',
+  'Магазины',
+  'Предоплаченные карты',
+  'Прочее',
+];
+
+/** Группирует массив ваучеров в объект { category: [items] } с сохранённым порядком. */
+function groupVouchersByCategory(items) {
+  const groups = {};
+  items.forEach(item => {
+    const cat = normalizeVoucherCategory(item);
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(item);
+  });
+  // Упорядочиваем: сначала известные категории, потом остальные по алфавиту
+  const known = VOUCHER_CATEGORY_ORDER.filter(c => groups[c]);
+  const unknown = Object.keys(groups).filter(c => !VOUCHER_CATEGORY_ORDER.includes(c)).sort();
+  const ordered = {};
+  [...known, ...unknown].forEach(c => { ordered[c] = groups[c]; });
+  return ordered;
+}
+
+/** Рендер сгруппированных по категориям ваучеров. */
+function renderGroupedVouchers(items, container) {
+  container.innerHTML = '';
+  container.className = 'vouchers-container';
+  const groups = groupVouchersByCategory(items);
+  const entries = Object.entries(groups);
+  if (!entries.length) {
+    container.innerHTML = '<div style="color:var(--text-tertiary);text-align:center;padding:40px">Нет доступных позиций</div>';
+    return;
+  }
+  entries.forEach(([catName, catItems]) => {
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'vouchers-group';
+    const title = document.createElement('div');
+    title.className = 'vouchers-group-title';
+    const countWord = catItems.length === 1 ? 'позиция' : (catItems.length < 5 ? 'позиции' : 'позиций');
+    title.innerHTML = `<span>${catName}</span><span class="vouchers-group-count">${catItems.length} ${countWord}</span>`;
+    const grid = document.createElement('div');
+    grid.className = 'services-grid';
+    groupDiv.appendChild(title);
+    groupDiv.appendChild(grid);
+    container.appendChild(groupDiv);
+    // Используем renderServiceCards с opener=openVoucherDetail
+    renderServiceCards(catItems, grid, openVoucherDetail);
+  });
+}
+
 async function loadVouchers() {
   const loading = document.getElementById('vouchersLoading');
   const grid = document.getElementById('vouchersGrid');
@@ -2725,24 +2940,53 @@ async function loadVouchers() {
     const raw = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
     const items = raw.filter(s => {
       const n = (s.name || s.title || '').toLowerCase();
-      // Exclude Apple items (those are in the gift cards section)
+      // Apple/iCloud items — в отдельной секции выше
       return !(n.includes('apple') || n.includes('app store') || n.includes('itunes') || n.includes('icloud') || n.includes('ios'));
     }).filter(s => s.isAvailable !== false);
     if (!items.length) throw new Error('empty');
-    loading.style.display = 'none'; grid.style.display = 'grid';
-    renderServiceCards(items.slice(0, 30), grid);
+    loading.style.display = 'none';
+    grid.style.display = '';
+    // Убираем grid-класс, т.к. теперь здесь группы
+    grid.classList.remove('services-grid');
+    renderGroupedVouchers(items, grid);
   } catch(e) {
     console.warn('Vouchers API unavailable, using mock:', e.message);
+    // Расширенный mock — PS, Xbox, Nintendo, Steam, стриминг, музыка, подписки
     const mockVouchers = [
-      { id: 'psn', name: 'PlayStation Network', category: 'Игровые карты' },
-      { id: 'xbox', name: 'Xbox Gift Card', category: 'Игровые карты' },
-      { id: 'netflix', name: 'Netflix', category: 'Стриминг' },
-      { id: 'spotify', name: 'Spotify Premium', category: 'Музыка' },
-      { id: 'steam', name: 'Steam Wallet', category: 'Игровая платформа' },
-      { id: 'nintendo', name: 'Nintendo eShop', category: 'Игровые карты' },
+      // PlayStation
+      { id: 'psn-us',          name: 'PlayStation Network (US)',  category: 'PlayStation' },
+      { id: 'psn-uk',          name: 'PlayStation Network (UK)',  category: 'PlayStation' },
+      { id: 'psn-tr',          name: 'PlayStation Network (TR)',  category: 'PlayStation' },
+      { id: 'ps-plus',         name: 'PlayStation Plus',          category: 'PlayStation' },
+      // Xbox
+      { id: 'xbox-us',         name: 'Xbox Gift Card (US)',       category: 'Xbox' },
+      { id: 'xbox-uk',         name: 'Xbox Gift Card (UK)',       category: 'Xbox' },
+      { id: 'xbox-gamepass',   name: 'Xbox Game Pass Ultimate',   category: 'Xbox' },
+      // Nintendo
+      { id: 'nintendo-us',     name: 'Nintendo eShop (US)',       category: 'Nintendo' },
+      { id: 'nintendo-eu',     name: 'Nintendo eShop (EU)',       category: 'Nintendo' },
+      { id: 'nintendo-online', name: 'Nintendo Switch Online',    category: 'Nintendo' },
+      // Steam
+      { id: 'steam-us',        name: 'Steam Wallet (US)',         category: 'Steam' },
+      { id: 'steam-eu',        name: 'Steam Wallet (EU)',         category: 'Steam' },
+      // Google
+      { id: 'google-play',     name: 'Google Play Gift Card',     category: 'Google Play' },
+      // Streaming
+      { id: 'netflix',         name: 'Netflix',                   category: 'Стриминг · Видео' },
+      { id: 'youtube',         name: 'YouTube Premium',           category: 'Стриминг · Видео' },
+      { id: 'twitch',          name: 'Twitch',                    category: 'Стриминг · Видео' },
+      // Music
+      { id: 'spotify',         name: 'Spotify Premium',           category: 'Музыка' },
+      { id: 'apple-music-sub', name: 'Apple Music',               category: 'Музыка' },
+      // Subscriptions
+      { id: 'discord',         name: 'Discord Nitro',             category: 'Подписки' },
+      // Shopping
+      { id: 'amazon',          name: 'Amazon Gift Card',          category: 'Amazon' },
     ].map(m => ({ ...m, isMock: true }));
-    loading.style.display = 'none'; grid.style.display = 'grid';
-    renderServiceCards(mockVouchers, grid);
+    loading.style.display = 'none';
+    grid.style.display = '';
+    grid.classList.remove('services-grid');
+    renderGroupedVouchers(mockVouchers, grid);
   }
 }
 
@@ -2771,7 +3015,7 @@ function extractImg(s) {
   return '';
 }
 
-function renderServiceCards(items, grid) {
+function renderServiceCards(items, grid, onOpen) {
   grid.innerHTML = '';
   items.forEach((s, i) => {
     const id = s.id || s.gameId || s.serviceId;
@@ -2837,7 +3081,8 @@ function renderServiceCards(items, grid) {
 
     if (!isMock) {
       // Use live imgSrc ref — it may update async via iTunes
-      div.addEventListener('click', () => openTopupDetail(id, name, iconEl.src));
+      const opener = onOpen || openTopupDetail;
+      div.addEventListener('click', () => opener(id, name, iconEl.src));
     }
     grid.appendChild(div);
   });
@@ -2905,6 +3150,10 @@ function toggleAdmin() {
     const token = TOKEN;
     document.getElementById('tokenDisplay').textContent = token.substring(0, 40) + '...' + token.substring(token.length - 20);
     document.getElementById('adminTosText').value = loadTos();
+    // Подтянуть текущую наценку
+    const pct = loadMarkup();
+    document.getElementById('adminMarkupInput').value = pct > 0 ? pct : '';
+    document.getElementById('currentMarkupLabel').textContent = pct + '%';
   }
 }
 document.getElementById('saveTosBtn').addEventListener('click', () => {
@@ -2913,6 +3162,19 @@ document.getElementById('saveTosBtn').addEventListener('click', () => {
   // TOS content is now static HTML
   document.getElementById('saveTosBtn').textContent = '✅ Сохранено';
   setTimeout(() => document.getElementById('saveTosBtn').textContent = '💾 Сохранить соглашение', 2000);
+});
+document.getElementById('saveMarkupBtn').addEventListener('click', () => {
+  const raw = document.getElementById('adminMarkupInput').value;
+  const pct = Math.max(0, Math.min(100, Number(raw) || 0));
+  saveMarkup(pct);
+  document.getElementById('currentMarkupLabel').textContent = pct + '%';
+  document.getElementById('adminMarkupInput').value = pct > 0 ? pct : '';
+  const btn = document.getElementById('saveMarkupBtn');
+  const origText = 'Сохранить';
+  btn.textContent = '✅ Сохранено';
+  setTimeout(() => btn.textContent = origText, 1500);
+  // Перерендерить товары с новой наценкой
+  loadGiftCards(); loadVouchers(); loadServices();
 });
 document.getElementById('adminAddCertBtn').addEventListener('click', () => {
   document.getElementById('adminPanel').classList.remove('open');
@@ -3009,7 +3271,7 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
   const SECTIONS = [
     { id: 'certs',      items: '.cert-card',          name: '.cert-card-name',  desc: '.cert-card-desc' },
     { id: 'giftcards',  items: '.wata-card',           name: '.wata-card-name',  desc: null },
-    { id: 'vouchers',   items: '.wata-card',           name: '.wata-card-name',  desc: null },
+    { id: 'vouchers',   items: '.wata-service-card',   name: '.wata-service-name', desc: '.wata-service-sub' },
     { id: 'services',   items: '.wata-service-card',   name: '.wata-service-name', desc: '.wata-service-sub' },
   ];
 

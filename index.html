@@ -3270,59 +3270,90 @@ function renderGroupedVouchers(items, container) {
 async function loadVouchers() {
   const loading = document.getElementById('vouchersLoading');
   const grid = document.getElementById('vouchersGrid');
-  try {
-    const data = await fetchWata('/v3/vouchers');
+
+  // Фильтр Apple — те позиции уходят в отдельную секцию gift cards
+  const isApple = (s) => {
+    const n = (s.name || s.title || '').toLowerCase();
+    return n.includes('apple') || n.includes('app store') || n.includes('itunes') ||
+           n.includes('icloud') || n.includes('ios');
+  };
+
+  // Универсальный нормализатор ответа API
+  const extractItems = (data) => {
     const raw = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
-    const items = raw.filter(s => {
-      const n = (s.name || s.title || '').toLowerCase();
-      // Apple/iCloud items — в отдельной секции выше
-      return !(n.includes('apple') || n.includes('app store') || n.includes('itunes') || n.includes('icloud') || n.includes('ios'));
-    }).filter(s => s.isAvailable !== false);
-    if (!items.length) throw new Error('empty');
+    return raw.filter(s => !isApple(s)).filter(s => s.isAvailable !== false);
+  };
+
+  // Цепочка эндпоинтов: сначала пробуем основной /v3/vouchers,
+  // если упадёт (Worker может отвечать 405) — берём /v3/vouchers/services,
+  // оттуда же грузятся гифт-карты Apple, и там же лежат все остальные сервисы.
+  const endpoints = ['/v3/vouchers', '/v3/vouchers/services'];
+  let items = null;
+  let lastError = null;
+
+  for (const ep of endpoints) {
+    try {
+      console.log('[loadVouchers] trying', ep);
+      const data = await fetchWata(ep);
+      const extracted = extractItems(data);
+      if (extracted.length) {
+        console.log('[loadVouchers] success from', ep, '— items:', extracted.length);
+        items = extracted;
+        break;
+      } else {
+        console.warn('[loadVouchers]', ep, 'returned 0 non-Apple items');
+      }
+    } catch (e) {
+      console.warn('[loadVouchers]', ep, 'failed:', e.message);
+      lastError = e;
+    }
+  }
+
+  if (items && items.length) {
     loading.style.display = 'none';
     grid.style.display = '';
-    // Убираем grid-класс, т.к. теперь здесь группы
     grid.classList.remove('services-grid');
     renderGroupedVouchers(items, grid);
-  } catch(e) {
-    console.warn('Vouchers API unavailable, using mock:', e.message);
-    // Расширенный mock — PS, Xbox, Nintendo, Steam, стриминг, музыка, подписки
-    const mockVouchers = [
-      // PlayStation
-      { id: 'psn-us',          name: 'PlayStation Network (US)',  category: 'PlayStation' },
-      { id: 'psn-uk',          name: 'PlayStation Network (UK)',  category: 'PlayStation' },
-      { id: 'psn-tr',          name: 'PlayStation Network (TR)',  category: 'PlayStation' },
-      { id: 'ps-plus',         name: 'PlayStation Plus',          category: 'PlayStation' },
-      // Xbox
-      { id: 'xbox-us',         name: 'Xbox Gift Card (US)',       category: 'Xbox' },
-      { id: 'xbox-uk',         name: 'Xbox Gift Card (UK)',       category: 'Xbox' },
-      { id: 'xbox-gamepass',   name: 'Xbox Game Pass Ultimate',   category: 'Xbox' },
-      // Nintendo
-      { id: 'nintendo-us',     name: 'Nintendo eShop (US)',       category: 'Nintendo' },
-      { id: 'nintendo-eu',     name: 'Nintendo eShop (EU)',       category: 'Nintendo' },
-      { id: 'nintendo-online', name: 'Nintendo Switch Online',    category: 'Nintendo' },
-      // Steam
-      { id: 'steam-us',        name: 'Steam Wallet (US)',         category: 'Steam' },
-      { id: 'steam-eu',        name: 'Steam Wallet (EU)',         category: 'Steam' },
-      // Google
-      { id: 'google-play',     name: 'Google Play Gift Card',     category: 'Google Play' },
-      // Streaming
-      { id: 'netflix',         name: 'Netflix',                   category: 'Стриминг · Видео' },
-      { id: 'youtube',         name: 'YouTube Premium',           category: 'Стриминг · Видео' },
-      { id: 'twitch',          name: 'Twitch',                    category: 'Стриминг · Видео' },
-      // Music
-      { id: 'spotify',         name: 'Spotify Premium',           category: 'Музыка' },
-      { id: 'apple-music-sub', name: 'Apple Music',               category: 'Музыка' },
-      // Subscriptions
-      { id: 'discord',         name: 'Discord Nitro',             category: 'Подписки' },
-      // Shopping
-      { id: 'amazon',          name: 'Amazon Gift Card',          category: 'Amazon' },
-    ].map(m => ({ ...m, isMock: true }));
-    loading.style.display = 'none';
-    grid.style.display = '';
-    grid.classList.remove('services-grid');
-    renderGroupedVouchers(mockVouchers, grid);
+    return;
   }
+
+  // Fallback — расширенный mock с пометкой «Скоро доступно»
+  console.warn('Vouchers API unavailable, using mock. Last error:', lastError?.message);
+  const mockVouchers = [
+    // PlayStation
+    { id: 'psn-us',          name: 'PlayStation Network (US)',  category: 'PlayStation' },
+    { id: 'psn-uk',          name: 'PlayStation Network (UK)',  category: 'PlayStation' },
+    { id: 'psn-tr',          name: 'PlayStation Network (TR)',  category: 'PlayStation' },
+    { id: 'ps-plus',         name: 'PlayStation Plus',          category: 'PlayStation' },
+    // Xbox
+    { id: 'xbox-us',         name: 'Xbox Gift Card (US)',       category: 'Xbox' },
+    { id: 'xbox-uk',         name: 'Xbox Gift Card (UK)',       category: 'Xbox' },
+    { id: 'xbox-gamepass',   name: 'Xbox Game Pass Ultimate',   category: 'Xbox' },
+    // Nintendo
+    { id: 'nintendo-us',     name: 'Nintendo eShop (US)',       category: 'Nintendo' },
+    { id: 'nintendo-eu',     name: 'Nintendo eShop (EU)',       category: 'Nintendo' },
+    { id: 'nintendo-online', name: 'Nintendo Switch Online',    category: 'Nintendo' },
+    // Steam
+    { id: 'steam-us',        name: 'Steam Wallet (US)',         category: 'Steam' },
+    { id: 'steam-eu',        name: 'Steam Wallet (EU)',         category: 'Steam' },
+    // Google
+    { id: 'google-play',     name: 'Google Play Gift Card',     category: 'Google Play' },
+    // Streaming
+    { id: 'netflix',         name: 'Netflix',                   category: 'Стриминг · Видео' },
+    { id: 'youtube',         name: 'YouTube Premium',           category: 'Стриминг · Видео' },
+    { id: 'twitch',          name: 'Twitch',                    category: 'Стриминг · Видео' },
+    // Music
+    { id: 'spotify',         name: 'Spotify Premium',           category: 'Музыка' },
+    { id: 'apple-music-sub', name: 'Apple Music',               category: 'Музыка' },
+    // Subscriptions
+    { id: 'discord',         name: 'Discord Nitro',             category: 'Подписки' },
+    // Shopping
+    { id: 'amazon',          name: 'Amazon Gift Card',          category: 'Amazon' },
+  ].map(m => ({ ...m, isMock: true }));
+  loading.style.display = 'none';
+  grid.style.display = '';
+  grid.classList.remove('services-grid');
+  renderGroupedVouchers(mockVouchers, grid);
 }
 
 /* ─── SERVICES (Games / TopUp) ─── */
@@ -3537,17 +3568,40 @@ document.getElementById('reloadApiBtn').addEventListener('click', () => {
 document.getElementById('testApiBtn').addEventListener('click', async () => {
   const diagEl = document.getElementById('apiDiagResult');
   diagEl.style.display = 'block';
-  diagEl.textContent = '⏳ Проверка...';
+  diagEl.textContent = '⏳ Проверка endpoints...';
   const results = [];
-  for (const ep of ['/v3/vouchers/services', '/v3/vouchers', '/v3/topup']) {
+  const endpoints = [
+    '/v3/vouchers/services',
+    '/v3/vouchers',
+    '/v3/topup',
+  ];
+  for (const ep of endpoints) {
     try {
-      const res = await fetch(`${API_BASE}${ep}`, { headers, signal: AbortSignal.timeout(6000) });
+      const res = await fetch(`${API_BASE}${ep}`, { headers, signal: AbortSignal.timeout(8000) });
       const text = await res.text();
-      results.push(`✅ ${ep} → HTTP ${res.status}: ${text.substring(0, 80)}`);
+      let icon = '✅';
+      let note = '';
+      if (res.status === 405) { icon = '⛔'; note = ' [METHOD NOT ALLOWED — Worker блокирует GET для этого пути]'; }
+      else if (res.status === 401 || res.status === 403) { icon = '🔒'; note = ' [Unauthorized — проверьте токен]'; }
+      else if (res.status >= 500) { icon = '💥'; note = ' [Server error — WATA или Worker недоступен]'; }
+      else if (!res.ok) { icon = '❌'; }
+      // Считаем количество элементов в успешном ответе для наглядности
+      let countNote = '';
+      if (res.ok) {
+        try {
+          const j = JSON.parse(text);
+          const arr = Array.isArray(j) ? j : (j.data || j.items || j.result || []);
+          if (Array.isArray(arr)) countNote = ` · ${arr.length} элементов`;
+        } catch {}
+      }
+      results.push(`${icon} ${ep} → HTTP ${res.status}${countNote}${note}\n   ${text.substring(0, 120)}${text.length > 120 ? '…' : ''}`);
     } catch(e) {
-      results.push(`❌ ${ep} → ${e.message}`);
+      results.push(`❌ ${ep} → network error: ${e.message}`);
     }
   }
+  results.push('\n──── Итоги ────');
+  results.push('Если /v3/vouchers вернул 405 — Worker не пропускает GET-запросы по этому пути.');
+  results.push('В этом случае раздел Vouchers автоматически использует /v3/vouchers/services как fallback.');
   diagEl.textContent = results.join('\n\n');
 });
 

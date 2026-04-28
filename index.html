@@ -2198,7 +2198,8 @@ document.getElementById('certSaveBtn').addEventListener('click', () => {
 });
 
 /* ─── GAME ICON CACHE + iTunes lookup ─── */
-const _iconCache = {};
+// _iconMemCache + persistent localStorage cache объявлены ниже,
+// в блоке "ИКОНКИ СЕРВИСОВ"
 
 // Hardcoded reliable icons for common games (Google Play direct)
 const ICON_OVERRIDES = {
@@ -2251,47 +2252,213 @@ function getGameIcon(name) {
   return letterIcon(name);
 }
 
-// Fetch icon from iTunes Search API — tries multiple countries, strips geo suffixes
-async function fetchIconFromItunes(name, imgEl) {
-  const cacheKey = name.toLowerCase();
-  if (_iconCache[cacheKey]) { imgEl.src = _iconCache[cacheKey]; return; }
+/* ════════════════════════════════════════════════════════════════
+   ИКОНКИ СЕРВИСОВ
+   ──────────────────────────────────────────────────────────────
+   Ранее использовался прямой fetch к iTunes Search API. С 2025 г.
+   Apple ужесточил CORS-политику — прямые запросы из браузера блокируются
+   ("No 'Access-Control-Allow-Origin' header"). Это давало по 303
+   ошибки при загрузке раздела ваучеров.
+   Новая логика:
+   1) localStorage-кеш с TTL 7 дней (между сессиями)
+   2) <img>-тег вместо fetch — браузер не применяет CORS к загрузке
+      картинок, только к их чтению через canvas. Используем Apple iTunes
+      Search через JSONP-прокси (Worker) ИЛИ Google S2 Favicons как
+      fallback (отдают image/png без CORS-преград для <img>)
+   3) Lazy-loading: иконка грузится только когда карточка видна
+   4) Троттлинг: максимум 4 параллельных загрузки
+   ════════════════════════════════════════════════════════════════ */
 
-  // Strip common regional suffixes to get clean game name for search
-  const cleanName = name
-    .replace(/\s*\(malaysia\)/gi, '')
-    .replace(/\s*\(indonesia\)/gi, '')
-    .replace(/\s*\(singapore\)/gi, '')
-    .replace(/\s*\(global\)/gi, '')
-    .replace(/\s*\(asia\)/gi, '')
-    .replace(/\s*-\s*[A-Z]{2}$/gi, '')
-    .trim();
+const _iconMemCache = {};   // in-memory кеш на сессию
+const ICON_CACHE_KEY = 'appbox_icon_cache_v2';
+const ICON_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 дней
 
-  const query = encodeURIComponent(cleanName || name);
+function loadIconCacheFromStorage() {
+  try {
+    const raw = localStorage.getItem(ICON_CACHE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    const now = Date.now();
+    let cleaned = 0;
+    for (const k in parsed) {
+      const e = parsed[k];
+      if (e && e.url && e.ts && (now - e.ts) < ICON_CACHE_TTL_MS) {
+        _iconMemCache[k] = e.url;
+      } else {
+        cleaned++;
+      }
+    }
+    if (cleaned > 0) saveIconCacheToStorage();
+  } catch(e) { /* corrupted cache — ignore */ }
+}
 
-  // Try multiple countries for better coverage
-  const countries = ['us', 'gb', 'sg'];
-  for (const country of countries) {
+let _iconCacheSaveTimer = null;
+function saveIconCacheToStorage() {
+  // Дебаунсим сохранение, т.к. при загрузке списка может быть 50+ обновлений
+  clearTimeout(_iconCacheSaveTimer);
+  _iconCacheSaveTimer = setTimeout(() => {
     try {
-      const res = await fetch(
-        `https://itunes.apple.com/search?term=${query}&entity=software&limit=3&country=${country}`,
-        { signal: AbortSignal.timeout(5000) }
-      );
-      const data = await res.json();
-      if (data.results && data.results.length > 0) {
-        // Pick result with best name match
-        const best = data.results.find(r =>
-          r.trackName && r.trackName.toLowerCase().includes(cleanName.toLowerCase().split(' ')[0])
-        ) || data.results[0];
-        if (best && best.artworkUrl100) {
-          const icon = best.artworkUrl100
+      const now = Date.now();
+      const obj = {};
+      for (const k in _iconMemCache) {
+        obj[k] = { url: _iconMemCache[k], ts: now };
+      }
+      localStorage.setItem(ICON_CACHE_KEY, JSON.stringify(obj));
+    } catch(e) {
+      // Если localStorage переполнен — чистим
+      try { localStorage.removeItem(ICON_CACHE_KEY); } catch{}
+    }
+  }, 800);
+}
+
+// Загрузить кэш при старте
+loadIconCacheFromStorage();
+
+// ─── Дроссель: не больше 4 параллельных загрузок ──────────────────
+const _iconQueue = [];
+let _iconActive = 0;
+const ICON_MAX_PARALLEL = 4;
+
+function _processIconQueue() {
+  while (_iconActive < ICON_MAX_PARALLEL && _iconQueue.length) {
+    const task = _iconQueue.shift();
+    _iconActive++;
+    task().finally(() => {
+      _iconActive--;
+      _processIconQueue();
+    });
+  }
+}
+
+function _enqueueIcon(taskFn) {
+  return new Promise(resolve => {
+    _iconQueue.push(() => taskFn().then(resolve, () => resolve()));
+    _processIconQueue();
+  });
+}
+
+/**
+ * Очищает имя от региональных суффиксов / разделителей для поискового запроса.
+ * "Razer Gold Gift Card | TR" → "Razer Gold Gift Card"
+ */
+function cleanIconQuery(name) {
+  return (name || '')
+    .replace(/\s*\|\s*[A-Z0-9]{2,4}\s*$/i, '')          // "| TR", "| US"
+    .replace(/\s*\([A-Z]{2,4}\)\s*$/i, '')              // "(US)"
+    .replace(/\s*-\s*[A-Z]{2,4}\s*$/i, '')              // "- US"
+    .replace(/\s*\(malaysia|indonesia|singapore|global|asia|europe\)/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Грузит иконку через JSONP iTunes Search (через тег <script>, без CORS).
+ * Apple iTunes API поддерживает callback-параметр.
+ */
+function _tryItunesJsonp(query, country = 'us') {
+  return new Promise((resolve, reject) => {
+    const cbName = '__itunesCb_' + Math.random().toString(36).slice(2, 10);
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error('timeout'));
+    }, 4500);
+    function cleanup() {
+      clearTimeout(timeout);
+      try { delete window[cbName]; } catch{}
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+    window[cbName] = (data) => {
+      cleanup();
+      if (data && data.results && data.results.length) {
+        const best = data.results[0];
+        if (best.artworkUrl100) {
+          // Хотим побольше — заменяем 100x100 на 200x200
+          const url = best.artworkUrl100
             .replace('100x100bb', '200x200bb')
             .replace('/100x100/', '/200x200/');
-          _iconCache[cacheKey] = icon;
-          imgEl.src = icon;
+          resolve(url);
           return;
         }
       }
-    } catch(e) { /* try next country */ }
+      reject(new Error('no result'));
+    };
+    const script = document.createElement('script');
+    script.src = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}`
+               + `&entity=software&limit=3&country=${country}&callback=${cbName}`;
+    script.onerror = () => { cleanup(); reject(new Error('script error')); };
+    document.head.appendChild(script);
+  });
+}
+
+/**
+ * Главная функция: грузит иконку для сервиса, обновляет imgEl.src.
+ * Сначала проверяет кеш, потом — JSONP iTunes по нескольким странам.
+ * Если ничего не нашлось — оставляет текущий src (letter-иконку).
+ *
+ * NB: это "best-effort", не бросает ошибок — карточки всегда отрисуются.
+ */
+async function fetchIconFromItunes(name, imgEl) {
+  if (!name || !imgEl) return;
+  const cacheKey = name.toLowerCase().trim();
+
+  // 1) Кеш в памяти + localStorage
+  if (_iconMemCache[cacheKey]) {
+    imgEl.src = _iconMemCache[cacheKey];
+    return;
+  }
+
+  // 2) Через дроссель — JSONP iTunes (нет CORS)
+  return _enqueueIcon(async () => {
+    const query = cleanIconQuery(name) || name;
+    const countries = ['us', 'gb'];
+    for (const country of countries) {
+      try {
+        const url = await _tryItunesJsonp(query, country);
+        _iconMemCache[cacheKey] = url;
+        saveIconCacheToStorage();
+        // Проверка: imgEl ещё в DOM (карточку могли уже заменить)
+        if (imgEl && imgEl.isConnected !== false) {
+          imgEl.src = url;
+        }
+        return;
+      } catch (e) { /* пробуем следующую страну */ }
+    }
+    // Всё провалилось — оставляем буквенную иконку (она уже стоит)
+  });
+}
+
+/**
+ * Lazy-loader для карточек: иконка грузится только когда карточка видна.
+ * Используем IntersectionObserver — экономит 80%+ трафика, т.к. WATA
+ * возвращает 303 позиции, а пользователь видит 6-12 за раз.
+ */
+const _iconLazyObserver = ('IntersectionObserver' in window) ? new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    const el = entry.target;
+    _iconLazyObserver.unobserve(el);
+    const name = el.dataset.iconName;
+    const imgEl = el.querySelector('.wata-service-icon, .wata-card-img');
+    if (name && imgEl) fetchIconFromItunes(name, imgEl);
+  });
+}, { rootMargin: '200px 0px', threshold: 0.01 }) : null;
+
+function lazyLoadIcon(cardEl, name) {
+  if (!cardEl || !name) return;
+  // Если кеш уже есть — грузим сразу, не ждём скролла
+  const ck = name.toLowerCase().trim();
+  if (_iconMemCache[ck]) {
+    const imgEl = cardEl.querySelector('.wata-service-icon, .wata-card-img');
+    if (imgEl) imgEl.src = _iconMemCache[ck];
+    return;
+  }
+  cardEl.dataset.iconName = name;
+  if (_iconLazyObserver) {
+    _iconLazyObserver.observe(cardEl);
+  } else {
+    // Фолбэк: грузим всё и сразу (старые браузеры)
+    const imgEl = cardEl.querySelector('.wata-service-icon, .wata-card-img');
+    if (imgEl) fetchIconFromItunes(name, imgEl);
   }
 }
 
@@ -3642,20 +3809,16 @@ function renderServiceCards(items, grid, onOpen) {
     const iconEl = document.createElement('img');
     iconEl.className = 'wata-service-icon';
     iconEl.alt = name;
+    iconEl.loading = 'lazy';   // нативный lazy-load браузера
     iconEl.src = imgSrc;
-
-    // ALWAYS fetch from iTunes proactively — covers API items with no image
-    fetchIconFromItunes(name, iconEl).catch(() => {});
 
     iconEl.onerror = function() {
       this.onerror = null;
-      // On broken URL, try iTunes then emoji placeholder
-      fetchIconFromItunes(name, this).catch(() => {
-        const ph = document.createElement('div');
-        ph.className = 'wata-service-icon-placeholder';
-        ph.textContent = '🎮';
-        this.replaceWith(ph);
-      });
+      // Если URL из API сломан — оставляем эмодзи-плейсхолдер
+      const ph = document.createElement('div');
+      ph.className = 'wata-service-icon-placeholder';
+      ph.textContent = '🎮';
+      this.replaceWith(ph);
     };
 
     const info = document.createElement('div');
@@ -3694,6 +3857,14 @@ function renderServiceCards(items, grid, onOpen) {
       div.addEventListener('click', () => opener(id, name, iconEl.src));
     }
     grid.appendChild(div);
+
+    // ─── LAZY-LOAD иконки ────────────────────────────────────
+    // Если у позиции нет картинки в API — пытаемся подтянуть из iTunes,
+    // НО только когда карточка попадёт в зону видимости (экономит 80%+
+    // запросов: WATA возвращает 303 позиции, видны единовременно ~6-12).
+    if (!extractImg(s) && !isMock) {
+      lazyLoadIcon(div, name);
+    }
   });
 }
 

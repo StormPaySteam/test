@@ -2781,6 +2781,10 @@ async function openVoucherDetail(id, name) {
   document.getElementById('wmFieldsBlock').style.display = 'none';
   document.getElementById('wmFieldsBlock').innerHTML = '';
   document.getElementById('wmEmail').value = '';
+  // На случай, если email-поле было скрыто в openBrandRegionPicker — возвращаем
+  const _emailInputV = document.getElementById('wmEmail');
+  const _emailWrapV = _emailInputV.closest('.form-group') || _emailInputV.parentElement;
+  if (_emailWrapV) _emailWrapV.style.display = '';
   document.getElementById('wmCodesList').innerHTML = '<li style="color:var(--text-secondary);text-align:center;padding:20px">Загрузка...</li>';
   document.getElementById('wataModal').classList.add('open');
   resetWmModal();
@@ -2965,6 +2969,9 @@ async function openTopupDetail(id, name, img) {
   document.getElementById('wmFieldsBlock').style.display = 'none';
   document.getElementById('wmFieldsBlock').innerHTML = '';
   document.getElementById('wmEmail').value = '';
+  const _emailInputT = document.getElementById('wmEmail');
+  const _emailWrapT = _emailInputT.closest('.form-group') || _emailInputT.parentElement;
+  if (_emailWrapT) _emailWrapT.style.display = '';
   document.getElementById('wmCodesList').innerHTML = '<li style="color:var(--text-secondary);text-align:center;padding:20px">Загрузка...</li>';
   document.getElementById('wataModal').classList.add('open');
   resetWmModal();
@@ -3566,6 +3573,134 @@ const VOUCHER_CATEGORY_ICONS = {
   'Прочее':                '🎁',
 };
 
+/* ════════════════════════════════════════════════════════════════
+   ГРУППИРОВКА ПО БРЕНДУ И РЕГИОНАМ
+   ──────────────────────────────────────────────────────────────
+   WATA отдаёт каждый региональный вариант отдельной позицией:
+   "Steam Wallet | US", "Steam Wallet | EU", "Steam Wallet | UK"…
+   Это даёт 303 карточки и плохой UX. Мы схлопываем такие позиции
+   в одну карточку-бренд "Steam Wallet" с открывающейся модалкой
+   выбора региона. Архитектура — как у App Store gift cards.
+   ════════════════════════════════════════════════════════════════ */
+
+/** Флаги стран для отображения у региональных вариантов */
+const REGION_FLAGS = {
+  US:'🇺🇸', UK:'🇬🇧', GB:'🇬🇧', EU:'🇪🇺', DE:'🇩🇪', FR:'🇫🇷', IT:'🇮🇹', ES:'🇪🇸',
+  PT:'🇵🇹', NL:'🇳🇱', BE:'🇧🇪', AT:'🇦🇹', CH:'🇨🇭', PL:'🇵🇱', SE:'🇸🇪', NO:'🇳🇴',
+  DK:'🇩🇰', FI:'🇫🇮', IE:'🇮🇪', RO:'🇷🇴', GR:'🇬🇷', CZ:'🇨🇿', HU:'🇭🇺',
+  TR:'🇹🇷', RU:'🇷🇺', UA:'🇺🇦', BY:'🇧🇾', KZ:'🇰🇿',
+  CA:'🇨🇦', MX:'🇲🇽', BR:'🇧🇷', AR:'🇦🇷', CL:'🇨🇱', CO:'🇨🇴', PE:'🇵🇪',
+  AU:'🇦🇺', NZ:'🇳🇿',
+  JP:'🇯🇵', KR:'🇰🇷', CN:'🇨🇳', HK:'🇭🇰', TW:'🇹🇼', SG:'🇸🇬', TH:'🇹🇭', MY:'🇲🇾',
+  ID:'🇮🇩', PH:'🇵🇭', VN:'🇻🇳', IN:'🇮🇳', PK:'🇵🇰',
+  AE:'🇦🇪', SA:'🇸🇦', QA:'🇶🇦', KW:'🇰🇼', BH:'🇧🇭', OM:'🇴🇲', JO:'🇯🇴', IL:'🇮🇱',
+  EG:'🇪🇬', MA:'🇲🇦', ZA:'🇿🇦', NG:'🇳🇬',
+  GL:'🌍',
+};
+
+/** Полные названия регионов */
+const REGION_NAMES = {
+  US:'США',  UK:'Великобритания', GB:'Великобритания', EU:'Европа', DE:'Германия',
+  FR:'Франция', IT:'Италия', ES:'Испания', PT:'Португалия', NL:'Нидерланды',
+  BE:'Бельгия', AT:'Австрия', CH:'Швейцария', PL:'Польша', SE:'Швеция',
+  NO:'Норвегия', DK:'Дания', FI:'Финляндия', IE:'Ирландия', RO:'Румыния',
+  GR:'Греция', CZ:'Чехия', HU:'Венгрия',
+  TR:'Турция', RU:'Россия', UA:'Украина', BY:'Беларусь', KZ:'Казахстан',
+  CA:'Канада', MX:'Мексика', BR:'Бразилия', AR:'Аргентина', CL:'Чили',
+  CO:'Колумбия', PE:'Перу',
+  AU:'Австралия', NZ:'Новая Зеландия',
+  JP:'Япония', KR:'Корея', CN:'Китай', HK:'Гонконг', TW:'Тайвань', SG:'Сингапур',
+  TH:'Таиланд', MY:'Малайзия', ID:'Индонезия', PH:'Филиппины', VN:'Вьетнам',
+  IN:'Индия', PK:'Пакистан',
+  AE:'ОАЭ', SA:'Сауд. Аравия', QA:'Катар', KW:'Кувейт', BH:'Бахрейн',
+  OM:'Оман', JO:'Иордания', IL:'Израиль',
+  EG:'Египет', MA:'Марокко', ZA:'ЮАР', NG:'Нигерия',
+  GL:'Глобальный',
+};
+
+/** Извлекает код региона (US, TR, BR…) из имени или возвращает null. */
+function extractRegion(item) {
+  const name = (item.name || item.title || '').trim();
+  // Только явные разделители: "Foo | US", "Foo (US)", "Foo - US"
+  // Не используем паттерн "Foo US" без разделителя — он ловит ложные срабатывания
+  // на словах в верхнем регистре (например, "PSN", "EA", "PS").
+  const patterns = [
+    /\|\s*([A-Z]{2,4})\s*$/,
+    /\(([A-Z]{2,4})\)\s*$/,
+    /\s-\s([A-Z]{2,4})\s*$/,
+  ];
+  for (const re of patterns) {
+    const m = name.match(re);
+    if (m && (REGION_FLAGS[m[1]] || REGION_NAMES[m[1]])) return m[1];
+  }
+  // Полные названия в скобках: "(Malaysia)" → MY, "(Indonesia)" → ID
+  const fullMap = {
+    'malaysia':'MY', 'indonesia':'ID', 'singapore':'SG', 'thailand':'TH',
+    'philippines':'PH', 'vietnam':'VN', 'global':'GL',
+  };
+  const fm = name.toLowerCase().match(/\((malaysia|indonesia|singapore|thailand|philippines|vietnam|global)\)/);
+  if (fm) return fullMap[fm[1]];
+  return null;
+}
+
+/** Ключ бренда: имя без региона, в нижнем регистре. */
+function extractBrandKey(item) {
+  let name = (item.name || item.title || '').trim();
+  // Убираем региональные суффиксы
+  name = name
+    .replace(/\s*\|\s*[A-Z0-9]{2,4}\s*$/i, '')
+    .replace(/\s*\([A-Z]{2,4}\)\s*$/i, '')
+    .replace(/\s*-\s*[A-Z]{2,4}\s*$/i, '')
+    .replace(/\s*\((malaysia|indonesia|singapore|thailand|philippines|vietnam|global|asia|europe)\)\s*$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return name.toLowerCase();
+}
+
+/** Имя бренда для отображения (с большой буквы). */
+function brandDisplayName(item) {
+  return (item.name || item.title || '')
+    .replace(/\s*\|\s*[A-Z0-9]{2,4}\s*$/i, '')
+    .replace(/\s*\([A-Z]{2,4}\)\s*$/i, '')
+    .replace(/\s*-\s*[A-Z]{2,4}\s*$/i, '')
+    .replace(/\s*\((malaysia|indonesia|singapore|thailand|philippines|vietnam|global|asia|europe)\)\s*$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Внутри одной категории схлопывает региональные варианты в бренды.
+ * Возвращает массив { brandKey, displayName, sample, variants[] }.
+ * Если variants.length === 1 → можно рендерить как обычную позицию.
+ */
+function groupByBrand(items) {
+  const map = new Map();
+  items.forEach(item => {
+    const key = extractBrandKey(item);
+    if (!map.has(key)) {
+      map.set(key, {
+        brandKey: key,
+        displayName: brandDisplayName(item),
+        sample: item,
+        variants: [],
+      });
+    }
+    map.get(key).variants.push(item);
+  });
+  // Сортируем варианты внутри бренда по региону (US/EU/UK сверху)
+  const REGION_PRIORITY = { US:1, EU:2, UK:3, GB:3, GL:4, TR:5, DE:6, FR:7 };
+  for (const brand of map.values()) {
+    brand.variants.sort((a, b) => {
+      const ra = extractRegion(a) || 'ZZ';
+      const rb = extractRegion(b) || 'ZZ';
+      const pa = REGION_PRIORITY[ra] || 99;
+      const pb = REGION_PRIORITY[rb] || 99;
+      return pa - pb || ra.localeCompare(rb);
+    });
+  }
+  return [...map.values()];
+}
+
 /** Группирует массив ваучеров в объект { category: [items] } с сохранённым порядком. */
 function groupVouchersByCategory(items) {
   const groups = {};
@@ -3582,7 +3717,7 @@ function groupVouchersByCategory(items) {
   return ordered;
 }
 
-/** Рендер сгруппированных по категориям ваучеров. */
+/** Рендер сгруппированных по категориям ваучеров со схлопыванием по бренду. */
 function renderGroupedVouchers(items, container) {
   container.innerHTML = '';
   container.className = 'vouchers-container';
@@ -3593,21 +3728,208 @@ function renderGroupedVouchers(items, container) {
     return;
   }
   entries.forEach(([catName, catItems]) => {
+    // ─── Схлопываем по бренду ────────────────────────────────
+    const brands = groupByBrand(catItems);
+
     const groupDiv = document.createElement('div');
     groupDiv.className = 'vouchers-group';
     const title = document.createElement('div');
     title.className = 'vouchers-group-title';
-    const countWord = catItems.length === 1 ? 'позиция' : (catItems.length < 5 ? 'позиции' : 'позиций');
+    // Считаем брендов, а не позиций — "5 брендов" звучит понятнее, чем "47 позиций"
+    const brandCount = brands.length;
+    const countWord = brandCount === 1 ? 'бренд' : (brandCount < 5 ? 'бренда' : 'брендов');
     const icon = VOUCHER_CATEGORY_ICONS[catName] || '🎁';
-    title.innerHTML = `<span><span style="margin-right:8px;font-size:0.95em">${icon}</span>${catName}</span><span class="vouchers-group-count">${catItems.length} ${countWord}</span>`;
+    title.innerHTML = `<span><span style="margin-right:8px;font-size:0.95em">${icon}</span>${catName}</span><span class="vouchers-group-count">${brandCount} ${countWord}</span>`;
     const grid = document.createElement('div');
     grid.className = 'services-grid';
     groupDiv.appendChild(title);
     groupDiv.appendChild(grid);
     container.appendChild(groupDiv);
-    // Используем renderServiceCards с opener=openVoucherDetail
-    renderServiceCards(catItems, grid, openVoucherDetail);
+
+    // ─── Рендер брендов (для 1 варианта — обычная карточка, для 2+ — с регионами)
+    renderBrandCards(brands, grid);
   });
+}
+
+/**
+ * Рендер карточек брендов. Если у бренда один вариант — открывается
+ * сразу openVoucherDetail; если несколько — открывается модалка
+ * выбора региона, оттуда уже openVoucherDetail.
+ */
+function renderBrandCards(brands, grid) {
+  grid.innerHTML = '';
+  brands.forEach((brand, i) => {
+    const v = brand.sample;
+    const id = v.id || v.serviceId || v.gameId;
+    const name = brand.displayName;
+    const isMock = !!v.isMock;
+    const variantCount = brand.variants.length;
+
+    const imgSrc = extractImg(v) || getGameIcon(name);
+
+    const div = document.createElement('div');
+    div.className = 'wata-service-card';
+    div.style.animationDelay = (i * 0.04) + 's';
+    if (isMock) div.style.opacity = '0.5';
+
+    const iconEl = document.createElement('img');
+    iconEl.className = 'wata-service-icon';
+    iconEl.alt = name;
+    iconEl.loading = 'lazy';
+    iconEl.src = imgSrc;
+    iconEl.onerror = function() {
+      this.onerror = null;
+      const ph = document.createElement('div');
+      ph.className = 'wata-service-icon-placeholder';
+      ph.textContent = '🎁';
+      this.replaceWith(ph);
+    };
+
+    const info = document.createElement('div');
+    info.className = 'wata-service-info';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'wata-service-name';
+    nameEl.textContent = name;
+    info.appendChild(nameEl);
+
+    if (variantCount > 1) {
+      // Показываем количество регионов
+      const subEl = document.createElement('div');
+      subEl.className = 'wata-service-sub';
+      const regionWord = variantCount === 1 ? 'регион' : (variantCount < 5 ? 'региона' : 'регионов');
+      // Формируем превью первых нескольких флагов
+      const previewFlags = brand.variants
+        .slice(0, 5)
+        .map(vv => REGION_FLAGS[extractRegion(vv) || ''] || '')
+        .filter(Boolean)
+        .join(' ');
+      subEl.innerHTML = `${variantCount} ${regionWord}${previewFlags ? '  ·  ' + previewFlags : ''}`;
+      info.appendChild(subEl);
+    } else {
+      // Обычная карточка — показываем регион (если есть) или категорию
+      const region = extractRegion(v);
+      const sub = region
+        ? `${REGION_FLAGS[region] || ''} ${REGION_NAMES[region] || region}`
+        : (v.category || v.description || '');
+      if (sub) {
+        const subEl = document.createElement('div');
+        subEl.className = 'wata-service-sub';
+        subEl.textContent = String(sub).substring(0, 60);
+        info.appendChild(subEl);
+      }
+    }
+
+    if (isMock) {
+      const mockEl = document.createElement('div');
+      mockEl.className = 'wata-service-sub';
+      mockEl.style.color = '#FF9F0A';
+      mockEl.textContent = '⏳ Скоро доступно';
+      info.appendChild(mockEl);
+    }
+
+    const arrow = document.createElement('div');
+    arrow.className = 'wata-service-arrow';
+    arrow.textContent = isMock ? '' : '›';
+
+    div.appendChild(iconEl);
+    div.appendChild(info);
+    div.appendChild(arrow);
+
+    if (!isMock) {
+      div.addEventListener('click', () => {
+        if (variantCount > 1) {
+          openBrandRegionPicker(brand, iconEl.src);
+        } else {
+          openVoucherDetail(id, name);
+        }
+      });
+    }
+    grid.appendChild(div);
+
+    if (!extractImg(v) && !isMock) {
+      lazyLoadIcon(div, name);
+    }
+  });
+}
+
+/**
+ * Открывает модалку выбора региона для бренда с несколькими вариантами.
+ * Использует ту же модалку wataModal — при клике на регион вызывается
+ * openVoucherDetail, который перезаполнит её номиналами.
+ */
+function openBrandRegionPicker(brand, iconSrc) {
+  const modal = document.getElementById('wataModal');
+  const title = document.getElementById('wmTitle');
+  const codesList = document.getElementById('wmCodesList');
+  const fieldsBlock = document.getElementById('wmFieldsBlock');
+  const emailInput = document.getElementById('wmEmail');
+  const desc = document.getElementById('wmDesc');
+
+  title.textContent = brand.displayName;
+  desc.textContent = `Выберите регион — ${brand.variants.length} ${brand.variants.length < 5 ? 'варианта' : 'вариантов'}`;
+
+  // Иконка в шапке модалки
+  const hi = document.getElementById('wmHeaderImg');
+  hi.innerHTML = '';
+  const hiImg = document.createElement('img');
+  hiImg.style.cssText = 'width:32px;height:32px;border-radius:8px;object-fit:contain;background:rgba(255,255,255,0.07);padding:4px';
+  hiImg.src = iconSrc || getGameIcon(brand.displayName);
+  hi.appendChild(hiImg);
+
+  // Большая иконка
+  const big = document.getElementById('wmImgBlock');
+  big.innerHTML = '';
+  const bigImg = document.createElement('img');
+  bigImg.style.cssText = 'width:80px;height:80px;border-radius:18px;object-fit:contain;background:rgba(255,255,255,0.07);padding:10px;display:block;margin:0 auto 16px;box-shadow:0 4px 20px rgba(0,0,0,0.3)';
+  bigImg.src = iconSrc || getGameIcon(brand.displayName);
+  big.appendChild(bigImg);
+
+  // Прячем поля и email — они нужны только при выборе номинала
+  fieldsBlock.style.display = 'none';
+  fieldsBlock.innerHTML = '';
+  if (emailInput) emailInput.value = '';
+  // Email-блок прячем, чтобы не было визуального шума на этапе выбора региона
+  const emailWrap = emailInput ? emailInput.closest('.form-group') || emailInput.parentElement : null;
+  if (emailWrap) emailWrap.style.display = 'none';
+
+  // Заголовок над списком регионов
+  const labelHtml = `<li style="list-style:none;padding:6px 4px 10px;color:var(--text-tertiary);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Доступные регионы</li>`;
+
+  // Список регионов
+  codesList.innerHTML = labelHtml + brand.variants.map(v => {
+    const region = extractRegion(v);
+    const flag   = REGION_FLAGS[region] || '🌍';
+    const fullName = region ? (REGION_NAMES[region] || region) : 'Стандартный';
+    const code = region || '';
+    return `
+      <li class="product-code-item region-pick-item" data-vid="${v.id || ''}" data-vname="${escapeHtml(v.name || '')}" style="cursor:pointer;transition:all 0.18s">
+        <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0">
+          <div style="font-size:24px;line-height:1;flex-shrink:0">${flag}</div>
+          <div style="flex:1;min-width:0">
+            <div class="product-code-name" style="font-weight:600">${escapeHtml(fullName)}</div>
+            ${code ? `<div style="font-size:11px;color:var(--text-tertiary);font-family:'SF Mono','Fira Code',monospace;letter-spacing:0.5px;margin-top:2px">${code}</div>` : ''}
+          </div>
+        </div>
+        <div style="color:var(--text-tertiary);font-size:18px;flex-shrink:0">›</div>
+      </li>`;
+  }).join('');
+
+  // Делегированный клик по регионам
+  codesList.querySelectorAll('.region-pick-item').forEach(li => {
+    li.addEventListener('click', () => {
+      const vid = li.dataset.vid;
+      const vname = li.dataset.vname;
+      // Возвращаем email-поле перед переходом к номиналам
+      if (emailWrap) emailWrap.style.display = '';
+      // Переход к номиналам
+      openVoucherDetail(vid, vname);
+    });
+    li.addEventListener('mouseenter', () => { li.style.background = 'rgba(167,139,250,0.10)'; });
+    li.addEventListener('mouseleave', () => { li.style.background = ''; });
+  });
+
+  modal.classList.add('open');
+  resetWmModal();
 }
 
 /* ─── Хелпер: рендер баннера «API временно недоступно» с кнопкой повтора ─── */

@@ -2019,6 +2019,15 @@ body {
         Текущая наценка: <b id="currentMarkupLabel">0%</b><br>
         Применяется ко всем ценам из API WATA (ваучеры, пополнения, гифт-карты). Пример: при наценке <b>1%</b> товар за 100 ₽ будет продаваться за <b>101 ₽</b>.
       </div>
+      <div class="admin-markup-preview" id="adminMarkupPreview" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(167,139,250,0.10);border:1px solid rgba(167,139,250,0.25);border-radius:10px;font-size:12px;color:var(--text-secondary)">
+        <div style="font-weight:600;color:var(--accent-purple);margin-bottom:6px">Предпросмотр при <span id="previewPct">0</span>%:</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px">
+          <div>100 ₽ →</div><div style="text-align:right;color:var(--text)"><b id="prev100">100 ₽</b></div>
+          <div>500 ₽ →</div><div style="text-align:right;color:var(--text)"><b id="prev500">500 ₽</b></div>
+          <div>1 000 ₽ →</div><div style="text-align:right;color:var(--text)"><b id="prev1000">1 000 ₽</b></div>
+          <div>5 000 ₽ →</div><div style="text-align:right;color:var(--text)"><b id="prev5000">5 000 ₽</b></div>
+        </div>
+      </div>
     </div>
 
     <div class="admin-section">
@@ -3299,27 +3308,62 @@ async function loadGiftCards() {
 /**
  * Нормализует категорию ваучера для группировки в UI.
  * WATA API может возвращать разные названия категорий, нормализуем их.
+ * Логика: всегда определяем категорию по названию товара, чтобы группировка
+ * получалась консистентной независимо от того, что прислал API в поле category.
  */
 function normalizeVoucherCategory(item) {
-  const rawCat = (item.category || item.categoryName || item.group || '').trim();
   const name = (item.name || item.title || '').toLowerCase();
+  const rawCat = (item.category || item.categoryName || item.group || '').trim().toLowerCase();
+  const haystack = `${name} ${rawCat}`;
 
-  // Если API явно дал категорию — используем её
-  if (rawCat) return rawCat;
+  // ─── PlayStation ────────────────────────────────────────────
+  // Включает: PSN gift cards, PS Plus (Essential/Extra/Deluxe), PS Now, PS Store
+  if (/playstation|\bpsn\b|\bps\s?(plus|store|now|4|5)\b|ps\+/i.test(haystack))
+    return 'PlayStation';
 
-  // Иначе — определяем по названию
-  if (/playstation|\bpsn\b|\bps\s?(plus|4|5)\b/i.test(name)) return 'PlayStation';
-  if (/\bxbox\b|game\s?pass/i.test(name)) return 'Xbox';
-  if (/nintendo|eshop|switch/i.test(name)) return 'Nintendo';
-  if (/\bsteam\b/i.test(name)) return 'Steam';
-  if (/netflix/i.test(name)) return 'Стриминг · Видео';
-  if (/spotify|deezer|tidal|apple\s?music/i.test(name)) return 'Музыка';
-  if (/youtube|twitch/i.test(name)) return 'Стриминг · Видео';
-  if (/discord|nitro/i.test(name)) return 'Подписки';
-  if (/google\s?play/i.test(name)) return 'Google Play';
-  if (/amazon/i.test(name)) return 'Amazon';
-  if (/ebay|walmart|target/i.test(name)) return 'Магазины';
-  if (/visa|mastercard|prepaid/i.test(name)) return 'Предоплаченные карты';
+  // ─── Xbox ───────────────────────────────────────────────────
+  // Включает: Xbox Live, Xbox Game Pass (Core / PC / Ultimate), Microsoft gift card
+  if (/\bxbox\b|game\s?pass|microsoft\s?(gift|card|store)/i.test(haystack))
+    return 'Xbox';
+
+  // ─── Nintendo ───────────────────────────────────────────────
+  if (/nintendo|\beshop\b|switch\s?online/i.test(haystack))
+    return 'Nintendo';
+
+  // ─── Steam ──────────────────────────────────────────────────
+  if (/\bsteam\b/i.test(haystack))
+    return 'Steam';
+
+  // ─── Стриминг · Видео ───────────────────────────────────────
+  if (/netflix|youtube|twitch|hulu|disney\+?|hbo|paramount|peacock|crunchyroll/i.test(haystack))
+    return 'Стриминг · Видео';
+
+  // ─── Музыка ─────────────────────────────────────────────────
+  if (/spotify|deezer|tidal|apple\s?music|yandex\s?music|sound\s?cloud/i.test(haystack))
+    return 'Музыка';
+
+  // ─── Подписки и игры ────────────────────────────────────────
+  if (/discord|nitro|ea\s?play|ubisoft|origin/i.test(haystack))
+    return 'Подписки';
+
+  // ─── Магазины приложений ────────────────────────────────────
+  if (/google\s?play/i.test(haystack)) return 'Google Play';
+
+  // ─── Маркетплейсы и ритейл ──────────────────────────────────
+  if (/amazon/i.test(haystack)) return 'Amazon';
+  if (/ebay|walmart|target|best\s?buy|home\s?depot/i.test(haystack))
+    return 'Магазины';
+
+  // ─── Предоплаченные карты ───────────────────────────────────
+  if (/\bvisa\b|mastercard|prepaid|virtual\s?card/i.test(haystack))
+    return 'Предоплаченные карты';
+
+  // Если API явно дал категорию и она не пустая — используем её как fallback
+  if (rawCat) {
+    // Возвращаем с заглавной буквы
+    return rawCat.charAt(0).toUpperCase() + rawCat.slice(1);
+  }
+
   return 'Прочее';
 }
 
@@ -3338,6 +3382,22 @@ const VOUCHER_CATEGORY_ORDER = [
   'Предоплаченные карты',
   'Прочее',
 ];
+
+/** Иконки для категорий — показываются в заголовке группы */
+const VOUCHER_CATEGORY_ICONS = {
+  'PlayStation':           '🎮',
+  'Xbox':                  '🟢',
+  'Nintendo':              '🔴',
+  'Steam':                 '♨️',
+  'Google Play':           '▶️',
+  'Стриминг · Видео':      '🎬',
+  'Музыка':                '🎵',
+  'Подписки':              '⭐',
+  'Amazon':                '🛒',
+  'Магазины':              '🏬',
+  'Предоплаченные карты':  '💳',
+  'Прочее':                '🎁',
+};
 
 /** Группирует массив ваучеров в объект { category: [items] } с сохранённым порядком. */
 function groupVouchersByCategory(items) {
@@ -3371,7 +3431,8 @@ function renderGroupedVouchers(items, container) {
     const title = document.createElement('div');
     title.className = 'vouchers-group-title';
     const countWord = catItems.length === 1 ? 'позиция' : (catItems.length < 5 ? 'позиции' : 'позиций');
-    title.innerHTML = `<span>${catName}</span><span class="vouchers-group-count">${catItems.length} ${countWord}</span>`;
+    const icon = VOUCHER_CATEGORY_ICONS[catName] || '🎁';
+    title.innerHTML = `<span><span style="margin-right:8px;font-size:0.95em">${icon}</span>${catName}</span><span class="vouchers-group-count">${catItems.length} ${countWord}</span>`;
     const grid = document.createElement('div');
     grid.className = 'services-grid';
     groupDiv.appendChild(title);
@@ -3467,35 +3528,69 @@ async function loadVouchers() {
   });
 
   const mockVouchers = [
-    // PlayStation
-    { id: 'psn-us',          name: 'PlayStation Network (US)',  category: 'PlayStation' },
-    { id: 'psn-uk',          name: 'PlayStation Network (UK)',  category: 'PlayStation' },
-    { id: 'psn-tr',          name: 'PlayStation Network (TR)',  category: 'PlayStation' },
-    { id: 'ps-plus',         name: 'PlayStation Plus',          category: 'PlayStation' },
-    // Xbox
-    { id: 'xbox-us',         name: 'Xbox Gift Card (US)',       category: 'Xbox' },
-    { id: 'xbox-uk',         name: 'Xbox Gift Card (UK)',       category: 'Xbox' },
-    { id: 'xbox-gamepass',   name: 'Xbox Game Pass Ultimate',   category: 'Xbox' },
-    // Nintendo
-    { id: 'nintendo-us',     name: 'Nintendo eShop (US)',       category: 'Nintendo' },
-    { id: 'nintendo-eu',     name: 'Nintendo eShop (EU)',       category: 'Nintendo' },
-    { id: 'nintendo-online', name: 'Nintendo Switch Online',    category: 'Nintendo' },
-    // Steam
-    { id: 'steam-us',        name: 'Steam Wallet (US)',         category: 'Steam' },
-    { id: 'steam-eu',        name: 'Steam Wallet (EU)',         category: 'Steam' },
-    // Google
-    { id: 'google-play',     name: 'Google Play Gift Card',     category: 'Google Play' },
-    // Streaming
-    { id: 'netflix',         name: 'Netflix',                   category: 'Стриминг · Видео' },
-    { id: 'youtube',         name: 'YouTube Premium',           category: 'Стриминг · Видео' },
-    { id: 'twitch',          name: 'Twitch',                    category: 'Стриминг · Видео' },
-    // Music
-    { id: 'spotify',         name: 'Spotify Premium',           category: 'Музыка' },
-    { id: 'apple-music-sub', name: 'Apple Music',               category: 'Музыка' },
-    // Subscriptions
-    { id: 'discord',         name: 'Discord Nitro',             category: 'Подписки' },
-    // Shopping
-    { id: 'amazon',          name: 'Amazon Gift Card',          category: 'Amazon' },
+    // ─── PlayStation ──────────────────────────────────────────
+    { id: 'psn-us',          name: 'PlayStation Network (US)',         category: 'PlayStation' },
+    { id: 'psn-uk',          name: 'PlayStation Network (UK)',         category: 'PlayStation' },
+    { id: 'psn-eu',          name: 'PlayStation Network (EU)',         category: 'PlayStation' },
+    { id: 'psn-tr',          name: 'PlayStation Network (TR)',         category: 'PlayStation' },
+    { id: 'psn-ua',          name: 'PlayStation Network (UA)',         category: 'PlayStation' },
+    { id: 'ps-plus-essential', name: 'PlayStation Plus Essential',     category: 'PlayStation' },
+    { id: 'ps-plus-extra',     name: 'PlayStation Plus Extra',         category: 'PlayStation' },
+    { id: 'ps-plus-deluxe',    name: 'PlayStation Plus Deluxe',        category: 'PlayStation' },
+
+    // ─── Xbox ─────────────────────────────────────────────────
+    { id: 'xbox-us',         name: 'Xbox Gift Card (US)',              category: 'Xbox' },
+    { id: 'xbox-uk',         name: 'Xbox Gift Card (UK)',              category: 'Xbox' },
+    { id: 'xbox-eu',         name: 'Xbox Gift Card (EU)',              category: 'Xbox' },
+    { id: 'xbox-tr',         name: 'Xbox Gift Card (TR)',              category: 'Xbox' },
+    { id: 'xbox-gp-core',    name: 'Xbox Game Pass Core',              category: 'Xbox' },
+    { id: 'xbox-gp-pc',      name: 'Xbox Game Pass для PC',            category: 'Xbox' },
+    { id: 'xbox-gp-ult',     name: 'Xbox Game Pass Ultimate',          category: 'Xbox' },
+
+    // ─── Nintendo ─────────────────────────────────────────────
+    { id: 'nintendo-us',     name: 'Nintendo eShop (US)',              category: 'Nintendo' },
+    { id: 'nintendo-eu',     name: 'Nintendo eShop (EU)',              category: 'Nintendo' },
+    { id: 'nintendo-jp',     name: 'Nintendo eShop (JP)',              category: 'Nintendo' },
+    { id: 'nintendo-online', name: 'Nintendo Switch Online',           category: 'Nintendo' },
+
+    // ─── Steam ────────────────────────────────────────────────
+    { id: 'steam-us',        name: 'Steam Wallet (US)',                category: 'Steam' },
+    { id: 'steam-eu',        name: 'Steam Wallet (EU)',                category: 'Steam' },
+    { id: 'steam-uk',        name: 'Steam Wallet (UK)',                category: 'Steam' },
+    { id: 'steam-tr',        name: 'Steam Wallet (TR)',                category: 'Steam' },
+    { id: 'steam-kz',        name: 'Steam Wallet (KZ)',                category: 'Steam' },
+
+    // ─── Google Play ──────────────────────────────────────────
+    { id: 'google-play-us',  name: 'Google Play Gift Card (US)',       category: 'Google Play' },
+    { id: 'google-play-tr',  name: 'Google Play Gift Card (TR)',       category: 'Google Play' },
+
+    // ─── Стриминг · Видео ─────────────────────────────────────
+    { id: 'netflix',         name: 'Netflix',                          category: 'Стриминг · Видео' },
+    { id: 'youtube',         name: 'YouTube Premium',                  category: 'Стриминг · Видео' },
+    { id: 'twitch',          name: 'Twitch',                           category: 'Стриминг · Видео' },
+    { id: 'disney-plus',     name: 'Disney+',                          category: 'Стриминг · Видео' },
+    { id: 'hbo-max',         name: 'HBO Max',                          category: 'Стриминг · Видео' },
+    { id: 'crunchyroll',     name: 'Crunchyroll',                      category: 'Стриминг · Видео' },
+
+    // ─── Музыка ──────────────────────────────────────────────
+    { id: 'spotify',         name: 'Spotify Premium',                  category: 'Музыка' },
+    { id: 'apple-music-sub', name: 'Apple Music',                      category: 'Музыка' },
+    { id: 'tidal',           name: 'Tidal HiFi',                       category: 'Музыка' },
+    { id: 'deezer',          name: 'Deezer Premium',                   category: 'Музыка' },
+
+    // ─── Подписки ─────────────────────────────────────────────
+    { id: 'discord',         name: 'Discord Nitro',                    category: 'Подписки' },
+    { id: 'ea-play',         name: 'EA Play',                          category: 'Подписки' },
+    { id: 'ubisoft-plus',    name: 'Ubisoft+',                         category: 'Подписки' },
+
+    // ─── Маркетплейсы ─────────────────────────────────────────
+    { id: 'amazon-us',       name: 'Amazon Gift Card (US)',            category: 'Amazon' },
+    { id: 'amazon-uk',       name: 'Amazon Gift Card (UK)',            category: 'Amazon' },
+    { id: 'amazon-de',       name: 'Amazon Gift Card (DE)',            category: 'Amazon' },
+
+    // ─── Предоплаченные карты ─────────────────────────────────
+    { id: 'visa-prepaid',    name: 'Visa Prepaid Card',                category: 'Предоплаченные карты' },
+    { id: 'mc-prepaid',      name: 'Mastercard Prepaid',               category: 'Предоплаченные карты' },
   ].map(m => ({ ...m, isMock: true }));
 
   // Создаём контейнер для групп ВНУТРИ grid (чтобы баннер был сверху)
@@ -3668,6 +3763,7 @@ function toggleAdmin() {
     const pct = loadMarkup();
     document.getElementById('adminMarkupInput').value = pct > 0 ? pct : '';
     document.getElementById('currentMarkupLabel').textContent = pct + '%';
+    updateMarkupPreview(pct);
   }
 }
 document.getElementById('saveTosBtn').addEventListener('click', () => {
@@ -3677,6 +3773,65 @@ document.getElementById('saveTosBtn').addEventListener('click', () => {
   document.getElementById('saveTosBtn').textContent = '✅ Сохранено';
   setTimeout(() => document.getElementById('saveTosBtn').textContent = '💾 Сохранить соглашение', 2000);
 });
+
+/* ─── MARKUP: live-превью при вводе процента ─── */
+function updateMarkupPreview(pct) {
+  const wrap = document.getElementById('adminMarkupPreview');
+  if (!wrap) return;
+  const n = Number(pct) || 0;
+  if (n <= 0) {
+    wrap.style.display = 'none';
+    return;
+  }
+  wrap.style.display = '';
+  document.getElementById('previewPct').textContent = (Math.round(n * 100) / 100);
+  const calc = (base) => Math.round(base * (1 + n / 100) * 100) / 100;
+  const fmt  = (v) => v.toLocaleString('ru-RU') + ' ₽';
+  document.getElementById('prev100').textContent  = fmt(calc(100));
+  document.getElementById('prev500').textContent  = fmt(calc(500));
+  document.getElementById('prev1000').textContent = fmt(calc(1000));
+  document.getElementById('prev5000').textContent = fmt(calc(5000));
+}
+document.getElementById('adminMarkupInput').addEventListener('input', (e) => {
+  updateMarkupPreview(e.target.value);
+});
+
+/* ─── MARKUP: плавающий бейдж "наценка X% активна" ─── */
+function updateMarkupBadge() {
+  const pct = loadMarkup();
+  let badge = document.getElementById('markupBadge');
+  if (pct <= 0) {
+    if (badge) badge.remove();
+    return;
+  }
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'markupBadge';
+    badge.style.cssText = `
+      position:fixed; right:16px; bottom:16px; z-index:90;
+      padding:8px 14px; border-radius:999px;
+      background:linear-gradient(135deg, rgba(167,139,250,0.95), rgba(139,92,246,0.95));
+      color:#fff; font-size:12px; font-weight:600; letter-spacing:0.2px;
+      box-shadow:0 6px 24px rgba(139,92,246,0.45), inset 0 1px 0 rgba(255,255,255,0.30);
+      backdrop-filter:blur(20px) saturate(180%);
+      -webkit-backdrop-filter:blur(20px) saturate(180%);
+      border:1px solid rgba(255,255,255,0.22);
+      cursor:default; user-select:none;
+      animation:badgeSlideIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    `;
+    if (!document.getElementById('markupBadgeKeyframes')) {
+      const style = document.createElement('style');
+      style.id = 'markupBadgeKeyframes';
+      style.textContent = '@keyframes badgeSlideIn { from { transform:translateY(20px); opacity:0; } to { transform:translateY(0); opacity:1; } }';
+      document.head.appendChild(style);
+    }
+    document.body.appendChild(badge);
+  }
+  badge.textContent = `🏷️ Наценка ${pct}% активна`;
+}
+// Показать бейдж сразу при загрузке, если наценка уже стоит
+updateMarkupBadge();
+
 document.getElementById('saveMarkupBtn').addEventListener('click', () => {
   const raw = document.getElementById('adminMarkupInput').value;
   const pct = Math.max(0, Math.min(100, Number(raw) || 0));
@@ -3687,6 +3842,9 @@ document.getElementById('saveMarkupBtn').addEventListener('click', () => {
   const origText = 'Сохранить';
   btn.textContent = '✅ Сохранено';
   setTimeout(() => btn.textContent = origText, 1500);
+  // Обновить превью и бейдж
+  updateMarkupPreview(pct);
+  updateMarkupBadge();
   // Перерендерить товары с новой наценкой
   loadGiftCards(); loadVouchers(); loadServices();
 });

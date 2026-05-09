@@ -222,7 +222,9 @@ body {
   user-select: none;
   text-decoration: none;
   color: var(--text);
+  -webkit-tap-highlight-color: transparent;
 }
+.nav-logo:active { opacity: 0.8; }
 .nav-logo-icon {
   width: 34px; height: 34px;
   background: linear-gradient(135deg, #7c3aed, #a78bfa);
@@ -1486,7 +1488,7 @@ body {
   .navbar { padding: 0 16px; }
   .nav-links { display: none; }
   .nav-logo-text { font-size: 16px; }
-  .nav-admin-btn { font-size: 12px; padding: 7px 12px; }
+
 
   /* Hero */
   .hero { padding: 48px 0 40px; }
@@ -1555,7 +1557,7 @@ body {
   /* Navbar */
   .nav-inner { gap: 12px; }
   .nav-logo-text { font-size: 15px; }
-  .nav-admin-btn { font-size: 11px; padding: 6px 10px; }
+
   .nav-logo-icon { width: 28px; height: 28px; font-size: 14px; }
 
   /* Hero */
@@ -1737,7 +1739,7 @@ body {
       <li><a href="#services">Игры</a></li>
       <li><a href="#tos">Документы</a></li>
     </ul>
-    <button class="nav-admin-btn" id="adminToggleBtn">⚙️ Панель</button>
+    <button class="nav-admin-btn" id="adminToggleBtn" style="display:none" aria-hidden="true">⚙️ Панель</button>
   </div>
 </nav>
 

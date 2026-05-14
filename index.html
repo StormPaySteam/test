@@ -12,6 +12,118 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ═══════════════════ MOBILE BURGER ═══════════════════ */
+.nav-burger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 40px; height: 40px;
+  background: rgba(124, 58, 237, 0.14);
+  border: 1px solid rgba(167,139,250,0.28);
+  border-radius: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-burger:hover { background: rgba(124,58,237,0.26); }
+.nav-burger span {
+  display: block;
+  width: 18px; height: 2px;
+  background: var(--accent-purple);
+  border-radius: 2px;
+  transition: all 0.28s cubic-bezier(0.34,1.56,0.64,1);
+  transform-origin: center;
+}
+.nav-burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-burger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.nav-burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ═══════════════════ MOBILE DRAWER ═══════════════════ */
+.mobile-nav-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(5, 2, 16, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 98;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.mobile-nav-overlay.visible { opacity: 1; }
+
+.mobile-nav-drawer {
+  display: none;
+  position: fixed;
+  top: 60px; left: 0; right: 0;
+  z-index: 99;
+  background: rgba(12, 6, 35, 0.97);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border-bottom: 1px solid rgba(167,139,250,0.18);
+  box-shadow: 0 24px 64px rgba(30,10,80,0.55);
+  transform: translateY(-12px);
+  opacity: 0;
+  transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1), opacity 0.22s ease;
+}
+.mobile-nav-drawer.open {
+  transform: translateY(0);
+  opacity: 1;
+}
+.mobile-nav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.mobile-nav-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.mobile-nav-close {
+  width: 28px; height: 28px;
+  background: rgba(255,255,255,0.07);
+  border: none;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-nav-close:hover { background: rgba(255,255,255,0.14); }
+.mobile-nav-links {
+  list-style: none;
+  padding: 8px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mobile-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 14px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
+  transition: background 0.18s, transform 0.18s;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-nav-link:active { transform: scale(0.97); }
+.mobile-nav-link:hover { background: rgba(124,58,237,0.15); }
+.mobile-nav-icon { font-size: 20px; width: 28px; text-align: center; }
+.mobile-nav-link svg { margin-left: auto; opacity: 0.35; flex-shrink: 0; }
+
 :root {
   --blur-sm: blur(16px) saturate(180%);
   --blur-md: blur(28px) saturate(200%);
@@ -1487,6 +1599,9 @@ body {
   /* Navbar */
   .navbar { padding: 0 16px; }
   .nav-links { display: none; }
+  .nav-burger { display: flex; }
+  .mobile-nav-overlay { display: block; }
+  .mobile-nav-drawer { display: block; }
   .nav-logo-text { font-size: 16px; }
 
 
@@ -1740,8 +1855,48 @@ body {
       <li><a href="#tos">Документы</a></li>
     </ul>
     <button class="nav-admin-btn" id="adminToggleBtn" style="display:none" aria-hidden="true">⚙️ Панель</button>
+    <!-- Mobile burger -->
+    <button class="nav-burger" id="navBurger" aria-label="Меню" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
+
+<!-- Mobile nav drawer -->
+<div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
+<div class="mobile-nav-drawer" id="mobileNavDrawer">
+  <div class="mobile-nav-header">
+    <span class="mobile-nav-title">Разделы</span>
+    <button class="mobile-nav-close" id="mobileNavClose" aria-label="Закрыть">✕</button>
+  </div>
+  <ul class="mobile-nav-links">
+    <li><a href="#certs" class="mobile-nav-link">
+      <span class="mobile-nav-icon">🎖️</span>
+      <span>Сертификаты</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </a></li>
+    <li><a href="#giftcards" class="mobile-nav-link">
+      <span class="mobile-nav-icon">🎁</span>
+      <span>Подарочные карты</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </a></li>
+    <li><a href="#vouchers" class="mobile-nav-link">
+      <span class="mobile-nav-icon">📱</span>
+      <span>Сервисы</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </a></li>
+    <li><a href="#services" class="mobile-nav-link">
+      <span class="mobile-nav-icon">🎮</span>
+      <span>Игры</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </a></li>
+    <li><a href="#tos" class="mobile-nav-link">
+      <span class="mobile-nav-icon">📄</span>
+      <span>Документы</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </a></li>
+  </ul>
+</div>
 
 <!-- ══ MAIN CONTENT ══ -->
 <div class="content">
@@ -4807,6 +4962,41 @@ renderCerts();
 loadGiftCards();
 loadVouchers();
 loadServices();
+
+/* ─── MOBILE NAV ─── */
+(function() {
+  var burger = document.getElementById('navBurger');
+  var drawer = document.getElementById('mobileNavDrawer');
+  var overlay = document.getElementById('mobileNavOverlay');
+
+  function openMenu() {
+    burger.classList.add('open');
+    drawer.classList.add('open');
+    overlay.classList.add('visible');
+    burger.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeMenu() {
+    burger.classList.remove('open');
+    drawer.classList.remove('open');
+    overlay.classList.remove('visible');
+    burger.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+
+  burger.addEventListener('click', function() {
+    burger.classList.contains('open') ? closeMenu() : openMenu();
+  });
+  overlay.addEventListener('click', closeMenu);
+  document.getElementById('mobileNavClose').addEventListener('click', closeMenu);
+
+  // Close on link tap + smooth scroll
+  drawer.querySelectorAll('.mobile-nav-link').forEach(function(link) {
+    link.addEventListener('click', function() {
+      closeMenu();
+    });
+  });
+})();
 </script>
 </body>
 </html>

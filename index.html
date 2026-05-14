@@ -124,8 +124,15 @@
 }
 .mobile-nav-link:active { transform: scale(0.97); }
 .mobile-nav-link:hover { background: rgba(124,58,237,0.15); }
-.mobile-nav-icon { font-size: 20px; width: 28px; text-align: center; }
-.mobile-nav-link svg { margin-left: auto; opacity: 0.35; flex-shrink: 0; }
+.mobile-nav-icon {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(124,58,237,0.18);
+  border-radius: 10px;
+  color: var(--accent-purple);
+  flex-shrink: 0;
+}
+.mobile-nav-arrow { margin-left: auto; opacity: 0.3; flex-shrink: 0; color: var(--text-secondary); }
 
 :root {
   --blur-sm: blur(16px) saturate(180%);
@@ -1603,8 +1610,6 @@ body {
   .navbar { padding: 0 16px; }
   .nav-links { display: none; }
   .nav-burger { display: flex; }
-  .mobile-nav-overlay { display: block; }
-  .mobile-nav-drawer { display: block; }
   .nav-logo-text { font-size: 16px; }
 
 
@@ -1870,33 +1875,42 @@ body {
 <div class="mobile-nav-drawer" id="mobileNavDrawer">
   <div class="mobile-nav-header">
     <span class="mobile-nav-title">Разделы</span>
-    <button class="mobile-nav-close" id="mobileNavClose" aria-label="Закрыть">✕</button>
   </div>
   <ul class="mobile-nav-links">
     <li><a href="#certs" class="mobile-nav-link">
-      <span class="mobile-nav-icon">🎖️</span>
+      <span class="mobile-nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M8 8H4l-1 8h18l-1-8h-4"/><path d="M9 16v4m6-4v4"/></svg>
+      </span>
       <span>Сертификаты</span>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <svg class="mobile-nav-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
     </a></li>
     <li><a href="#giftcards" class="mobile-nav-link">
-      <span class="mobile-nav-icon">🎁</span>
+      <span class="mobile-nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3s1 2-4 4M8 3s-1 2 4 4M2 11h20"/></svg>
+      </span>
       <span>Подарочные карты</span>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <svg class="mobile-nav-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
     </a></li>
     <li><a href="#vouchers" class="mobile-nav-link">
-      <span class="mobile-nav-icon">📱</span>
+      <span class="mobile-nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="17" r="1" fill="currentColor"/><path d="M9 6h6M9 10h4"/></svg>
+      </span>
       <span>Сервисы</span>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <svg class="mobile-nav-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
     </a></li>
     <li><a href="#services" class="mobile-nav-link">
-      <span class="mobile-nav-icon">🎮</span>
+      <span class="mobile-nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="3"/><circle cx="8.5" cy="13" r="1.5" fill="currentColor"/><circle cx="15.5" cy="13" r="1.5" fill="currentColor"/><path d="M12 9v2M12 15v2" stroke-width="2.5"/></svg>
+      </span>
       <span>Игры</span>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <svg class="mobile-nav-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
     </a></li>
     <li><a href="#tos" class="mobile-nav-link">
-      <span class="mobile-nav-icon">📄</span>
+      <span class="mobile-nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
+      </span>
       <span>Документы</span>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <svg class="mobile-nav-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
     </a></li>
   </ul>
 </div>
@@ -4973,31 +4987,41 @@ loadServices();
   var overlay = document.getElementById('mobileNavOverlay');
 
   function openMenu() {
+    // Make visible first, then animate in
+    overlay.style.display = 'block';
+    drawer.style.display = 'block';
+    // Force reflow so transition fires
+    overlay.offsetHeight;
+    drawer.offsetHeight;
     burger.classList.add('open');
     drawer.classList.add('open');
     overlay.classList.add('visible');
     burger.setAttribute('aria-expanded', 'true');
     document.body.style.overflow = 'hidden';
   }
+
   function closeMenu() {
     burger.classList.remove('open');
     drawer.classList.remove('open');
     overlay.classList.remove('visible');
     burger.setAttribute('aria-expanded', 'false');
     document.body.style.overflow = '';
+    // Hide after transition ends so they can't block taps
+    setTimeout(function() {
+      if (!drawer.classList.contains('open')) {
+        drawer.style.display = 'none';
+        overlay.style.display = 'none';
+      }
+    }, 350);
   }
 
   burger.addEventListener('click', function() {
     burger.classList.contains('open') ? closeMenu() : openMenu();
   });
   overlay.addEventListener('click', closeMenu);
-  document.getElementById('mobileNavClose').addEventListener('click', closeMenu);
 
-  // Close on link tap + smooth scroll
   drawer.querySelectorAll('.mobile-nav-link').forEach(function(link) {
-    link.addEventListener('click', function() {
-      closeMenu();
-    });
+    link.addEventListener('click', closeMenu);
   });
 })();
 </script>

@@ -50,9 +50,10 @@
   -webkit-backdrop-filter: blur(8px);
   z-index: 98;
   opacity: 0;
+  pointer-events: none;
   transition: opacity 0.3s;
 }
-.mobile-nav-overlay.visible { opacity: 1; }
+.mobile-nav-overlay.visible { opacity: 1; pointer-events: auto; }
 
 .mobile-nav-drawer {
   display: none;
@@ -66,11 +67,13 @@
   box-shadow: 0 24px 64px rgba(30,10,80,0.55);
   transform: translateY(-12px);
   opacity: 0;
+  pointer-events: none;
   transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1), opacity 0.22s ease;
 }
 .mobile-nav-drawer.open {
   transform: translateY(0);
   opacity: 1;
+  pointer-events: auto;
 }
 .mobile-nav-header {
   display: flex;

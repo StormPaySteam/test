@@ -2813,27 +2813,30 @@ function iomSave() {
 
 /* ═══════════════════ HELPER: wrap icon element for override button ═══════════════════ */
 function makeIconWrap(iconEl, serviceId, serviceName) {
-  const wrap = document.createElement('div');
-  wrap.className = 'wata-icon-wrap';
-  iconEl.parentNode.insertBefore(wrap, iconEl);
-  wrap.appendChild(iconEl);
+  try {
+    if (!iconEl || !iconEl.parentNode) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'wata-icon-wrap';
+    iconEl.parentNode.insertBefore(wrap, iconEl);
+    wrap.appendChild(iconEl);
 
-  const editBtn = document.createElement('div');
-  editBtn.className = 'wata-icon-edit-btn';
-  editBtn.title = 'Изменить иконку';
-  editBtn.innerHTML = '✏️';
-  editBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    openIconOverrideModal(serviceId, serviceName, iconEl.src, iconEl);
-  });
-  wrap.appendChild(editBtn);
+    const editBtn = document.createElement('div');
+    editBtn.className = 'wata-icon-edit-btn';
+    editBtn.title = 'Изменить иконку';
+    editBtn.innerHTML = '✏️';
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openIconOverrideModal(serviceId, serviceName, iconEl.src, iconEl);
+    });
+    wrap.appendChild(editBtn);
 
-  // Mark iconEl for batch update on save
-  iconEl.dataset.overrideId = String(serviceId);
+    iconEl.dataset.overrideId = String(serviceId);
 
-  // Apply existing override immediately
-  const override = getWataIconOverride(String(serviceId));
-  if (override) iconEl.src = override;
+    const override = getWataIconOverride(String(serviceId));
+    if (override) iconEl.src = override;
+  } catch(e) {
+    console.warn('[makeIconWrap] skipped:', e.message);
+  }
 }
 /* ─── RENDER CERTS ─── */
 function renderCerts() {
@@ -4152,7 +4155,7 @@ function renderVoucherCards(items, grid) {
     div.appendChild(imgEl);
     div.appendChild(body);
     grid.appendChild(div);
-    makeIconWrap(imgEl, id, name);
+    try { makeIconWrap(imgEl, id, name); } catch(e) {}
   });
 }
 
@@ -4609,7 +4612,7 @@ function renderBrandCards(brands, grid) {
       });
     }
     grid.appendChild(div);
-    if (!isMock) makeIconWrap(iconEl, id, name);
+    if (!isMock) { try { makeIconWrap(iconEl, id, name); } catch(e) {} }
 
     if (!extractImg(v) && !isMock) {
       lazyLoadIcon(div, name);
@@ -4944,7 +4947,7 @@ function renderServiceCards(items, grid, onOpen) {
       div.addEventListener('click', () => opener(id, name, iconEl.src));
     }
     grid.appendChild(div);
-    if (!isMock) makeIconWrap(iconEl, id, name);
+    if (!isMock) { try { makeIconWrap(iconEl, id, name); } catch(e) {} }
 
     // ─── LAZY-LOAD иконки ────────────────────────────────────
     if (!extractImg(s) && !isMock) {

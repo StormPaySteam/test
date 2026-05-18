@@ -2757,11 +2757,17 @@ function openIconOverrideModal(serviceId, serviceName, currentSrc, imgEl) {
   // Show reset button only if override exists
   document.getElementById('iomResetBtn').style.display = override ? 'inline-flex' : 'none';
 
-  document.getElementById('iconOverrideModal').classList.add('open');
+  const _modal = document.getElementById('iconOverrideModal');
+  if (_modal && !_modal._backdropBound) {
+    _modal._backdropBound = true;
+    _modal.addEventListener('click', (e) => { if (e.target === _modal) closeIconOverrideModal(); });
+  }
+  if (_modal) _modal.classList.add('open');
 }
 
 function closeIconOverrideModal() {
-  document.getElementById('iconOverrideModal').classList.remove('open');
+  const _m = document.getElementById('iconOverrideModal');
+  if (_m) _m.classList.remove('open');
   _iomServiceId = null;
   _iomCurrentImgEl = null;
   _iomPendingDataUrl = null;
@@ -2803,10 +2809,7 @@ function iomSave() {
   closeIconOverrideModal();
 }
 
-// Close modal on backdrop click
-document.getElementById('iconOverrideModal').addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) closeIconOverrideModal();
-});
+// Backdrop click handled via openIconOverrideModal (lazy, to avoid null error if modal not yet in DOM)
 
 /* ═══════════════════ HELPER: wrap icon element for override button ═══════════════════ */
 function makeIconWrap(iconEl, serviceId, serviceName) {

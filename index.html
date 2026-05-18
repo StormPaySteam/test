@@ -640,7 +640,7 @@ body {
   opacity: 0;
   transition: opacity 0.2s;
 }
-.cert-card:hover .cert-card-edit-actions { opacity: 1; }
+body.admin-mode .cert-card:hover .cert-card-edit-actions { opacity: 1; }
 .btn-icon {
   width: 30px; height: 30px;
   background: rgba(0,0,0,0.5);
@@ -1774,6 +1774,136 @@ body {
 /* Scroll reveal */
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
 .reveal.visible { opacity: 1; transform: translateY(0); }
+/* ═══════════════════ ICON TYPE TABS ═══════════════════ */
+.icon-type-tabs {
+  display: flex; gap: 4px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 10px;
+  padding: 3px;
+}
+.icon-tab {
+  flex: 1;
+  background: none; border: none;
+  color: var(--text-secondary);
+  font-size: 12px; font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.icon-tab.active {
+  background: rgba(124,58,237,0.35);
+  color: var(--accent-purple);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+}
+.icon-tab:hover:not(.active) { background: rgba(255,255,255,0.07); color: var(--text); }
+.icon-upload-area {
+  display: flex; align-items: center; justify-content: center;
+  height: 80px;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px dashed rgba(167,139,250,0.30);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  overflow: hidden;
+}
+.icon-upload-area:hover {
+  background: rgba(124,58,237,0.10);
+  border-color: rgba(167,139,250,0.55);
+}
+.icon-upload-placeholder {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  color: var(--text-secondary);
+  font-size: 11px; font-weight: 500;
+  pointer-events: none;
+}
+/* ── WATA card icon override button ── */
+.wata-icon-edit-btn {
+  position: absolute;
+  bottom: -4px; right: -4px;
+  width: 22px; height: 22px;
+  background: rgba(124,58,237,0.90);
+  border: 1.5px solid rgba(255,255,255,0.25);
+  border-radius: 50%;
+  display: none;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  transition: transform 0.15s, background 0.15s;
+  z-index: 2;
+  -webkit-tap-highlight-color: transparent;
+}
+.wata-icon-edit-btn:hover { transform: scale(1.15); background: rgba(124,58,237,1); }
+body.admin-mode .wata-service-card:hover .wata-icon-edit-btn,
+body.admin-mode .wata-card:hover .wata-icon-edit-btn { display: flex; }
+.wata-icon-wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+}
+/* icon override modal */
+.icon-override-modal {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(5,2,16,0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: none; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.icon-override-modal.open { display: flex; }
+.icon-override-box {
+  background: rgba(18,10,45,0.97);
+  border: 1px solid rgba(167,139,250,0.25);
+  border-radius: 22px;
+  padding: 26px 24px;
+  width: 100%; max-width: 340px;
+  box-shadow: 0 24px 64px rgba(30,10,80,0.55);
+}
+.icon-override-title {
+  font-size: 16px; font-weight: 700; margin-bottom: 6px;
+  background: linear-gradient(135deg, #fff 30%, #d8b4fe);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.icon-override-sub {
+  font-size: 12px; color: var(--text-tertiary); margin-bottom: 18px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.icon-override-preview {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 18px;
+}
+.icon-override-preview-img {
+  width: 64px; height: 64px; border-radius: 16px;
+  object-fit: contain; background: rgba(255,255,255,0.07); padding: 8px;
+  border: 1px solid rgba(255,255,255,0.12); flex-shrink: 0;
+}
+.icon-override-btns { display: flex; gap: 8px; margin-top: 4px; }
+.icon-override-actions { display: flex; gap: 8px; margin-top: 16px; }
+.btn-override-save {
+  flex: 1;
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  border: none; color: #fff; font-size: 13px; font-weight: 700;
+  padding: 11px; border-radius: 12px; cursor: pointer;
+  transition: all 0.2s; box-shadow: 0 4px 16px rgba(124,58,237,0.45);
+}
+.btn-override-save:hover { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+.btn-override-cancel {
+  flex: 1;
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text-secondary); font-size: 13px; font-weight: 600;
+  padding: 11px; border-radius: 12px; cursor: pointer; transition: all 0.2s;
+}
+.btn-override-cancel:hover { background: rgba(255,255,255,0.12); }
+.btn-override-reset {
+  background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.25);
+  color: #f87171; font-size: 12px; font-weight: 600;
+  padding: 8px 14px; border-radius: 10px; cursor: pointer; transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn-override-reset:hover { background: rgba(239,68,68,0.22); }
+
 
 /* ═══════════════════ HERO AVATAR ═══════════════════ */
 .hero-avatar-wrap {
@@ -2307,8 +2437,27 @@ body {
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">Иконка (эмодзи)</label>
-          <input class="form-input" id="certIcon" placeholder="🎖️">
+          <label class="form-label">Иконка</label>
+          <div class="icon-type-tabs" id="iconTypeTabs">
+            <button type="button" class="icon-tab active" data-tab="emoji" onclick="switchIconTab('emoji',this)">Эмодзи</button>
+            <button type="button" class="icon-tab" data-tab="image" onclick="switchIconTab('image',this)">Картинка</button>
+          </div>
+          <div id="iconTabEmoji">
+            <input class="form-input" id="certIcon" placeholder="🎖️" style="margin-top:8px">
+          </div>
+          <div id="iconTabImage" style="display:none;margin-top:8px">
+            <input type="file" id="certIconFile" accept="image/*" style="display:none" onchange="handleCertIconUpload(this)">
+            <div class="icon-upload-area" id="iconUploadArea" onclick="document.getElementById('certIconFile').click()">
+              <div id="iconPreviewWrap">
+                <div class="icon-upload-placeholder" id="iconUploadPlaceholder">
+                  <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="opacity:0.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <span>Загрузить изображение</span>
+                </div>
+                <img id="iconPreviewImg" src="" alt="" style="display:none;width:64px;height:64px;object-fit:contain;border-radius:14px;border:1px solid rgba(255,255,255,0.15)">
+              </div>
+            </div>
+            <input type="hidden" id="certIconImg" value="">
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Цвет карточки</label>
@@ -2527,6 +2676,162 @@ function applyMarkup(price) {
 /* ─── DEFAULT CERTS ─── */
 const DEFAULT_CERTS = [];
 
+
+/* ═══════════════════ ICON TAB SWITCHING ═══════════════════ */
+function switchIconTab(tab, btn) {
+  // Update tab buttons
+  document.querySelectorAll('.icon-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  if (tab === 'emoji') {
+    document.getElementById('iconTabEmoji').style.display = '';
+    document.getElementById('iconTabImage').style.display = 'none';
+  } else {
+    document.getElementById('iconTabEmoji').style.display = 'none';
+    document.getElementById('iconTabImage').style.display = '';
+  }
+}
+
+function resetIconPreview() {
+  const prev = document.getElementById('iconPreviewImg');
+  const ph = document.getElementById('iconUploadPlaceholder');
+  if (prev) { prev.src = ''; prev.style.display = 'none'; }
+  if (ph) ph.style.display = 'flex';
+  const fileInput = document.getElementById('certIconFile');
+  if (fileInput) fileInput.value = '';
+}
+
+function handleCertIconUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    document.getElementById('certIconImg').value = dataUrl;
+    const prev = document.getElementById('iconPreviewImg');
+    prev.src = dataUrl;
+    prev.style.display = 'block';
+    document.getElementById('iconUploadPlaceholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ═══════════════════ WATA ICON OVERRIDE SYSTEM ═══════════════════ */
+const WATA_ICON_OVERRIDES_KEY = 'appbox_icon_overrides_v1';
+
+function loadWataIconOverrides() {
+  try { return JSON.parse(localStorage.getItem(WATA_ICON_OVERRIDES_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+function saveWataIconOverride(serviceId, dataUrl) {
+  const overrides = loadWataIconOverrides();
+  if (dataUrl) overrides[serviceId] = dataUrl;
+  else delete overrides[serviceId];
+  localStorage.setItem(WATA_ICON_OVERRIDES_KEY, JSON.stringify(overrides));
+}
+
+function getWataIconOverride(serviceId) {
+  if (!serviceId) return null;
+  const overrides = loadWataIconOverrides();
+  return overrides[String(serviceId)] || null;
+}
+
+// State for current icon override modal
+let _iomServiceId = null;
+let _iomCurrentImgEl = null;
+let _iomPendingDataUrl = null;
+
+function openIconOverrideModal(serviceId, serviceName, currentSrc, imgEl) {
+  _iomServiceId = String(serviceId);
+  _iomCurrentImgEl = imgEl;
+  _iomPendingDataUrl = null;
+
+  document.getElementById('iomServiceName').textContent = serviceName || serviceId;
+  const prevImg = document.getElementById('iomPreviewImg');
+  // Show user override if exists, else current icon
+  const override = getWataIconOverride(_iomServiceId);
+  prevImg.src = override || currentSrc || '';
+  document.getElementById('iomFileInput').value = '';
+
+  // Show reset button only if override exists
+  document.getElementById('iomResetBtn').style.display = override ? 'inline-flex' : 'none';
+
+  document.getElementById('iconOverrideModal').classList.add('open');
+}
+
+function closeIconOverrideModal() {
+  document.getElementById('iconOverrideModal').classList.remove('open');
+  _iomServiceId = null;
+  _iomCurrentImgEl = null;
+  _iomPendingDataUrl = null;
+}
+
+function handleIomUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    _iomPendingDataUrl = e.target.result;
+    document.getElementById('iomPreviewImg').src = _iomPendingDataUrl;
+    document.getElementById('iomResetBtn').style.display = 'inline-flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+function iomReset() {
+  // Remove override and restore default
+  if (!_iomServiceId) return;
+  saveWataIconOverride(_iomServiceId, null);
+  _iomPendingDataUrl = null;
+  // Reload page sections to reflect
+  loadGiftCards(); loadVouchers(); loadServices();
+  closeIconOverrideModal();
+}
+
+function iomSave() {
+  if (!_iomServiceId) return;
+  if (_iomPendingDataUrl) {
+    saveWataIconOverride(_iomServiceId, _iomPendingDataUrl);
+    // Update all matching icon elements on screen immediately
+    document.querySelectorAll(`[data-override-id="${CSS.escape(_iomServiceId)}"]`).forEach(img => {
+      img.src = _iomPendingDataUrl;
+    });
+    // Also update the clicked icon directly
+    if (_iomCurrentImgEl) _iomCurrentImgEl.src = _iomPendingDataUrl;
+  }
+  closeIconOverrideModal();
+}
+
+// Close modal on backdrop click
+document.getElementById('iconOverrideModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeIconOverrideModal();
+});
+
+/* ═══════════════════ HELPER: wrap icon element for override button ═══════════════════ */
+function makeIconWrap(iconEl, serviceId, serviceName) {
+  const wrap = document.createElement('div');
+  wrap.className = 'wata-icon-wrap';
+  iconEl.parentNode.insertBefore(wrap, iconEl);
+  wrap.appendChild(iconEl);
+
+  const editBtn = document.createElement('div');
+  editBtn.className = 'wata-icon-edit-btn';
+  editBtn.title = 'Изменить иконку';
+  editBtn.innerHTML = '✏️';
+  editBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openIconOverrideModal(serviceId, serviceName, iconEl.src, iconEl);
+  });
+  wrap.appendChild(editBtn);
+
+  // Mark iconEl for batch update on save
+  iconEl.dataset.overrideId = String(serviceId);
+
+  // Apply existing override immediately
+  const override = getWataIconOverride(String(serviceId));
+  if (override) iconEl.src = override;
+}
 /* ─── RENDER CERTS ─── */
 function renderCerts() {
   const grid = document.getElementById('certGrid');
@@ -2537,6 +2842,9 @@ function renderCerts() {
     const div = document.createElement('div');
     div.className = `cert-card ${c.grad || 'cert-grad-1'}`;
     div.style.animationDelay = `${i * 0.07}s`;
+    const certIconHtml = c.iconImg
+      ? `<img src="${'${c.iconImg}'}" alt="${'${c.name}'}" style="width:64px;height:64px;object-fit:contain;border-radius:14px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.35))">`
+      : `<div class="cert-card-icon">${'${c.icon || "🎖️"}'}</div>`;
     div.innerHTML = `
       <div class="cert-card-edit-actions">
         <div class="btn-icon" onclick="editCert('${c.id}',event)" title="Редактировать">✏️</div>
@@ -2544,7 +2852,7 @@ function renderCerts() {
       </div>
       <div class="cert-card-header">
         <div class="cert-card-bg"></div>
-        <div class="cert-card-icon">${c.icon || '🎖️'}</div>
+        ${certIconHtml}
         ${c.badge ? `<div class="cert-card-badge">${c.badge}</div>` : ''}
       </div>
       <div class="cert-card-body">
@@ -2565,7 +2873,12 @@ function openCertDetail(c) {
   document.getElementById('cdTitle').textContent = c.name;
   document.getElementById('cdPrice').textContent = `${Number(c.price).toLocaleString('ru-RU')} ₽`;
   document.getElementById('cdDesc').textContent = c.desc || '';
-  document.getElementById('cdIconBlock').textContent = c.icon || '🎖️';
+  const cdIconBlock = document.getElementById('cdIconBlock');
+  if (c.iconImg) {
+    cdIconBlock.innerHTML = `<img src="${c.iconImg}" alt="${c.name}" style="width:72px;height:72px;object-fit:contain;border-radius:18px;display:block;margin:0 auto">`;
+  } else {
+    cdIconBlock.textContent = c.icon || '🎖️';
+  }
   const badge = document.getElementById('cdBadge');
   badge.innerHTML = c.badge ? `<span class="cert-card-badge" style="position:static;background:rgba(139,92,246,0.25);border-color:rgba(139,92,246,0.4);color:var(--accent-blue)">${c.badge}</span>` : '';
   const buyBtn = document.getElementById('cdBuyBtn');
@@ -2585,6 +2898,9 @@ function openAddCert() {
   ['certName','certDesc','certPrice','certBadge','certLink'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('certIcon').value = '🎖️';
   document.getElementById('certGrad').value = 'cert-grad-1';
+  document.getElementById('certIconImg').value = '';
+  resetIconPreview();
+  switchIconTab('emoji', document.querySelector('[data-tab="emoji"]'));
   document.getElementById('certModal').classList.add('open');
 }
 function editCert(id, e) {
@@ -2601,6 +2917,16 @@ function editCert(id, e) {
   document.getElementById('certIcon').value = c.icon || '🎖️';
   document.getElementById('certGrad').value = c.grad || 'cert-grad-1';
   document.getElementById('certLink').value = c.link || '';
+  document.getElementById('certIconImg').value = c.iconImg || '';
+  if (c.iconImg) {
+    switchIconTab('image', document.querySelector('[data-tab="image"]'));
+    document.getElementById('iconPreviewImg').src = c.iconImg;
+    document.getElementById('iconPreviewImg').style.display = 'block';
+    document.getElementById('iconUploadPlaceholder').style.display = 'none';
+  } else {
+    switchIconTab('emoji', document.querySelector('[data-tab="emoji"]'));
+    resetIconPreview();
+  }
   document.getElementById('certModal').classList.add('open');
 }
 function deleteCert(id, e) {
@@ -2611,6 +2937,8 @@ function deleteCert(id, e) {
 }
 document.getElementById('certSaveBtn').addEventListener('click', () => {
   let certs = loadCerts();
+  const iconImg = document.getElementById('certIconImg').value || '';
+  const iconTab = document.querySelector('.icon-tab.active')?.dataset?.tab || 'emoji';
   const obj = {
     id: editId || Date.now().toString(),
     name: document.getElementById('certName').value.trim(),
@@ -2618,6 +2946,7 @@ document.getElementById('certSaveBtn').addEventListener('click', () => {
     price: document.getElementById('certPrice').value.trim(),
     badge: document.getElementById('certBadge').value.trim(),
     icon: document.getElementById('certIcon').value.trim() || '🎖️',
+    iconImg: (iconTab === 'image' && iconImg) ? iconImg : '',
     grad: document.getElementById('certGrad').value,
     link: document.getElementById('certLink').value.trim(),
   };
@@ -3820,6 +4149,7 @@ function renderVoucherCards(items, grid) {
     div.appendChild(imgEl);
     div.appendChild(body);
     grid.appendChild(div);
+    makeIconWrap(imgEl, id, name);
   });
 }
 
@@ -4276,6 +4606,7 @@ function renderBrandCards(brands, grid) {
       });
     }
     grid.appendChild(div);
+    if (!isMock) makeIconWrap(iconEl, id, name);
 
     if (!extractImg(v) && !isMock) {
       lazyLoadIcon(div, name);
@@ -4610,11 +4941,9 @@ function renderServiceCards(items, grid, onOpen) {
       div.addEventListener('click', () => opener(id, name, iconEl.src));
     }
     grid.appendChild(div);
+    if (!isMock) makeIconWrap(iconEl, id, name);
 
     // ─── LAZY-LOAD иконки ────────────────────────────────────
-    // Если у позиции нет картинки в API — пытаемся подтянуть из iTunes,
-    // НО только когда карточка попадёт в зону видимости (экономит 80%+
-    // запросов: WATA возвращает 303 позиции, видны единовременно ~6-12).
     if (!extractImg(s) && !isMock) {
       lazyLoadIcon(div, name);
     }
@@ -4675,10 +5004,12 @@ const logoEl = document.getElementById('logoLink');
 if (logoEl) { logoEl.addEventListener('click', handleLogoClick); logoEl.onclick = handleLogoClick; }
 document.getElementById('adminClose').addEventListener('click', () => {
   document.getElementById('adminPanel').classList.remove('open');
+  document.body.classList.remove('admin-mode');
 });
 function toggleAdmin() {
   const panel = document.getElementById('adminPanel');
   const isOpen = panel.classList.toggle('open');
+  document.body.classList.toggle('admin-mode', isOpen);
   if (isOpen) {
     const token = TOKEN;
     document.getElementById('tokenDisplay').textContent = token.substring(0, 40) + '...' + token.substring(token.length - 20);
@@ -5025,6 +5356,31 @@ loadServices();
   });
 })();
 </script>
+
+<!-- ══ ICON OVERRIDE MODAL ══ -->
+<div class="icon-override-modal" id="iconOverrideModal">
+  <div class="icon-override-box">
+    <div class="icon-override-title">Изменить иконку</div>
+    <div class="icon-override-sub" id="iomServiceName"></div>
+    <div class="icon-override-preview">
+      <img class="icon-override-preview-img" id="iomPreviewImg" src="" alt="">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">Текущая иконка</div>
+        <div class="icon-override-btns">
+          <input type="file" id="iomFileInput" accept="image/*" style="display:none" onchange="handleIomUpload(this)">
+          <button class="btn-admin-save" style="flex:1;padding:9px 12px;font-size:12px;margin:0" onclick="document.getElementById('iomFileInput').click()">
+            📂 Загрузить
+          </button>
+          <button class="btn-override-reset" id="iomResetBtn" onclick="iomReset()">↩ Сброс</button>
+        </div>
+      </div>
+    </div>
+    <div class="icon-override-actions">
+      <button class="btn-override-cancel" onclick="closeIconOverrideModal()">Отмена</button>
+      <button class="btn-override-save" id="iomSaveBtn" onclick="iomSave()">Сохранить</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
 </html>

@@ -1774,6 +1774,55 @@ body.admin-mode .cert-card:hover .cert-card-edit-actions { opacity: 1; }
 /* Scroll reveal */
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
 .reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ═══ ADMIN ICON LIST ═══ */
+.admin-icon-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  transition: background 0.15s;
+}
+.admin-icon-item:hover { background: rgba(124,58,237,0.10); border-color: rgba(167,139,250,0.18); }
+.admin-icon-thumb {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  object-fit: contain;
+  background: rgba(255,255,255,0.07);
+  padding: 5px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.10);
+}
+.admin-icon-name {
+  flex: 1; min-width: 0;
+  font-size: 13px; font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.admin-icon-has-override {
+  font-size: 10px; color: #a78bfa;
+  background: rgba(124,58,237,0.18);
+  border-radius: 6px; padding: 2px 7px;
+  flex-shrink: 0; font-weight: 600;
+}
+.btn-admin-icon-upload {
+  background: rgba(124,58,237,0.20);
+  border: 1px solid rgba(167,139,250,0.28);
+  color: var(--accent-purple);
+  font-size: 11px; font-weight: 700;
+  padding: 6px 10px; border-radius: 8px;
+  cursor: pointer; transition: all 0.15s;
+  white-space: nowrap; flex-shrink: 0;
+}
+.btn-admin-icon-upload:hover { background: rgba(124,58,237,0.38); }
+.btn-admin-icon-reset {
+  background: rgba(239,68,68,0.10);
+  border: 1px solid rgba(239,68,68,0.22);
+  color: #f87171; font-size: 11px; font-weight: 700;
+  padding: 6px 8px; border-radius: 8px;
+  cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+}
+.btn-admin-icon-reset:hover { background: rgba(239,68,68,0.22); }
 /* ═══════════════════ ICON TYPE TABS ═══════════════════ */
 .icon-type-tabs {
   display: flex; gap: 4px;
@@ -2623,6 +2672,28 @@ body.admin-mode .wata-card:hover .wata-icon-edit-btn { display: flex; }
       <button class="btn-admin-save" id="adminAddCertBtn" style="background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;margin-top:0">+ Добавить сертификат</button>
     </div>
 
+
+    <div class="admin-section" id="adminIconsSection">
+      <div class="admin-section-title">🖼 Иконки сервисов и игр</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;line-height:1.5">
+        Загрузи свою иконку для любого товара. Изменения сохраняются в браузере.
+      </div>
+      <!-- Search -->
+      <div style="position:relative;margin-bottom:10px">
+        <input class="form-input" id="iconSearchInput" placeholder="Поиск: Steam, Roblox, PlayStation…" autocomplete="off"
+          style="padding-right:36px;font-size:13px" oninput="filterIconList(this.value)">
+        <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);opacity:0.4;font-size:14px;pointer-events:none">🔍</span>
+      </div>
+      <!-- List -->
+      <div id="adminIconList" style="max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;border-radius:12px">
+        <div style="color:var(--text-tertiary);font-size:12px;text-align:center;padding:16px">
+          Загрузка списка сервисов…
+        </div>
+      </div>
+      <!-- Hidden file input for admin icon panel -->
+      <input type="file" id="adminIconFileInput" accept="image/*" style="display:none">
+    </div>
+
     <div class="admin-section">
       <div class="admin-section-title">Данные API</div>
       <button class="btn-secondary" id="reloadApiBtn" style="width:100%;font-size:13px;padding:10px;">🔄 Перезагрузить товары из API</button>
@@ -2679,6 +2750,135 @@ function applyMarkup(price) {
 const DEFAULT_CERTS = [];
 
 
+
+/* ═══════════════════ ADMIN ICON PANEL ═══════════════════ */
+// Master list of all loaded services for the admin icon manager
+let _adminAllServices = [];  // [{id, name, imgSrc}]
+
+function registerServicesForAdmin(items, type) {
+  items.forEach(item => {
+    const id = String(item.id || item.serviceId || item.gameId || '');
+    const name = item.name || item.title || '';
+    if (!id || !name) return;
+    if (_adminAllServices.find(s => s.id === id)) return; // dedupe
+    const imgSrc = (typeof extractImg === 'function' ? extractImg(item) : '') || getGameIcon(name);
+    _adminAllServices.push({ id, name, imgSrc, type });
+  });
+  _adminAllServices.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+}
+
+function buildAdminIconList(items) {
+  const container = document.getElementById('adminIconList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!items.length) {
+    container.innerHTML = '<div style="color:var(--text-tertiary);font-size:12px;text-align:center;padding:16px">Ничего не найдено</div>';
+    return;
+  }
+
+  const overrides = loadWataIconOverrides();
+
+  items.forEach(svc => {
+    const hasOverride = !!overrides[svc.id];
+    const row = document.createElement('div');
+    row.className = 'admin-icon-item';
+    row.dataset.svcId = svc.id;
+
+    const thumb = document.createElement('img');
+    thumb.className = 'admin-icon-thumb';
+    thumb.src = overrides[svc.id] || svc.imgSrc || getGameIcon(svc.name);
+    thumb.alt = svc.name;
+    thumb.onerror = function() { this.src = getGameIcon(svc.name); };
+    thumb.dataset.overrideId = svc.id;
+
+    const name = document.createElement('div');
+    name.className = 'admin-icon-name';
+    name.textContent = svc.name;
+
+    const actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;gap:5px;align-items:center;flex-shrink:0';
+
+    if (hasOverride) {
+      const badge = document.createElement('span');
+      badge.className = 'admin-icon-has-override';
+      badge.textContent = '✓ своя';
+      actions.appendChild(badge);
+
+      const resetBtn = document.createElement('button');
+      resetBtn.className = 'btn-admin-icon-reset';
+      resetBtn.textContent = '↩';
+      resetBtn.title = 'Сбросить';
+      resetBtn.onclick = () => adminIconReset(svc.id, row, thumb, svc.name);
+      actions.appendChild(resetBtn);
+    }
+
+    const uploadBtn = document.createElement('button');
+    uploadBtn.className = 'btn-admin-icon-upload';
+    uploadBtn.textContent = hasOverride ? '🔄' : '📷';
+    uploadBtn.title = 'Загрузить иконку';
+    uploadBtn.onclick = () => adminIconUploadClick(svc.id, svc.name, row, thumb);
+    actions.appendChild(uploadBtn);
+
+    row.appendChild(thumb);
+    row.appendChild(name);
+    row.appendChild(actions);
+    container.appendChild(row);
+  });
+}
+
+function filterIconList(query) {
+  const q = (query || '').toLowerCase().trim();
+  const filtered = q
+    ? _adminAllServices.filter(s => s.name.toLowerCase().includes(q))
+    : _adminAllServices;
+  buildAdminIconList(filtered.slice(0, 60));
+}
+
+function adminIconUploadClick(serviceId, serviceName, row, thumbEl) {
+  const fileInput = document.getElementById('adminIconFileInput');
+  fileInput.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result;
+      saveWataIconOverride(serviceId, dataUrl);
+      // Update all matching thumbnails on page and in list
+      thumbEl.src = dataUrl;
+      document.querySelectorAll(`[data-override-id="${CSS.escape(serviceId)}"]`).forEach(img => {
+        img.src = dataUrl;
+      });
+      // Rebuild row to show "✓ своя" badge
+      const q = document.getElementById('iconSearchInput')?.value || '';
+      filterIconList(q);
+    };
+    reader.readAsDataURL(file);
+    fileInput.value = '';
+  };
+  fileInput.click();
+}
+
+function adminIconReset(serviceId, row, thumbEl, name) {
+  saveWataIconOverride(serviceId, null);
+  const defaultSrc = getGameIcon(name);
+  thumbEl.src = defaultSrc;
+  document.querySelectorAll(`[data-override-id="${CSS.escape(serviceId)}"]`).forEach(img => {
+    img.src = defaultSrc;
+  });
+  const q = document.getElementById('iconSearchInput')?.value || '';
+  filterIconList(q);
+}
+
+function refreshAdminIconPanel() {
+  if (!_adminAllServices.length) {
+    const container = document.getElementById('adminIconList');
+    if (container) container.innerHTML = '<div style="color:var(--text-tertiary);font-size:12px;text-align:center;padding:16px">Товары ещё не загружены. Нажмите «Перезагрузить товары из API».</div>';
+    return;
+  }
+  const q = document.getElementById('iconSearchInput')?.value || '';
+  filterIconList(q);
+}
 /* ═══════════════════ ICON TAB SWITCHING ═══════════════════ */
 function switchIconTab(tab, btn) {
   // Update tab buttons
@@ -4215,6 +4415,7 @@ async function loadGiftCards() {
     loading.style.display = 'none';
     grid.style.display = 'grid';
     renderVoucherCards(getDefaultRegionItems(toRender), grid);
+    registerServicesForAdmin(toRender, 'giftcard');
     if (toRender.length > getDefaultRegionItems(toRender).length) {
       btn.style.display = 'flex';
     }
@@ -4772,6 +4973,7 @@ async function loadVouchers() {
 
   if (items && items.length) {
     renderGroupedVouchers(items, grid);
+    registerServicesForAdmin(items, 'voucher');
     return;
   }
 
@@ -4967,9 +5169,11 @@ async function loadServices() {
     if (!items.length) throw new Error('empty');
     loading.style.display = 'none'; grid.style.display = 'grid';
     renderServiceCards(items.slice(0, 30), grid);
+    registerServicesForAdmin(items, 'topup');
   } catch(e) {
     loading.style.display = 'none'; grid.style.display = 'grid';
     renderServiceCards(MOCK_TOPUP.map(m => ({...m, isMock: true})), grid);
+    registerServicesForAdmin(MOCK_TOPUP, 'topup');
   }
 }
 
@@ -5025,6 +5229,8 @@ function toggleAdmin() {
     document.getElementById('adminMarkupInput').value = pct > 0 ? pct : '';
     document.getElementById('currentMarkupLabel').textContent = pct + '%';
     updateMarkupPreview(pct);
+    // Populate icon manager list
+    refreshAdminIconPanel();
   }
 }
 document.getElementById('saveTosBtn').addEventListener('click', () => {
@@ -5128,9 +5334,10 @@ document.getElementById('rawTopupBtn').addEventListener('click', async () => {
 });
 
 document.getElementById('reloadApiBtn').addEventListener('click', () => {
+  _adminAllServices = [];
   loadGiftCards(); loadVouchers(); loadServices();
   document.getElementById('reloadApiBtn').textContent = '⏳ Загрузка...';
-  setTimeout(() => document.getElementById('reloadApiBtn').textContent = '🔄 Перезагрузить товары из API', 3000);
+  setTimeout(() => { document.getElementById('reloadApiBtn').textContent = '🔄 Перезагрузить товары из API'; refreshAdminIconPanel(); }, 3000);
 });
 document.getElementById('testApiBtn').addEventListener('click', async () => {
   const diagEl = document.getElementById('apiDiagResult');

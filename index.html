@@ -1837,6 +1837,8 @@ body.admin-mode .cert-card:hover .cert-card-edit-actions { opacity: 1; }
   -webkit-tap-highlight-color: transparent;
 }
 .wata-icon-edit-btn:hover { transform: scale(1.15); background: rgba(124,58,237,1); }
+body.admin-mode .wata-service-card { position: relative; }
+body.admin-mode .wata-card { position: relative; }
 body.admin-mode .wata-service-card:hover .wata-icon-edit-btn,
 body.admin-mode .wata-card:hover .wata-icon-edit-btn { display: flex; }
 .wata-icon-wrap {
@@ -2814,11 +2816,10 @@ function iomSave() {
 /* ═══════════════════ HELPER: wrap icon element for override button ═══════════════════ */
 function makeIconWrap(iconEl, serviceId, serviceName) {
   try {
-    if (!iconEl || !iconEl.parentNode) return;
-    const wrap = document.createElement('div');
-    wrap.className = 'wata-icon-wrap';
-    iconEl.parentNode.insertBefore(wrap, iconEl);
-    wrap.appendChild(iconEl);
+    if (!iconEl) return;
+    // Find nearest card container — don't restructure DOM, just append button to it
+    const card = iconEl.closest('.wata-service-card, .wata-card');
+    if (!card) return;
 
     const editBtn = document.createElement('div');
     editBtn.className = 'wata-icon-edit-btn';
@@ -2828,10 +2829,9 @@ function makeIconWrap(iconEl, serviceId, serviceName) {
       e.stopPropagation();
       openIconOverrideModal(serviceId, serviceName, iconEl.src, iconEl);
     });
-    wrap.appendChild(editBtn);
+    card.appendChild(editBtn);
 
     iconEl.dataset.overrideId = String(serviceId);
-
     const override = getWataIconOverride(String(serviceId));
     if (override) iconEl.src = override;
   } catch(e) {

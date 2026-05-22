@@ -5708,14 +5708,9 @@ document.getElementById('searchSteamTgBtn').addEventListener('click', async () =
     const lines = found.length
       ? found.map(s => `✅ ID: ${s.id || s.serviceId} | ${s.name || s.title}`)
       : ['Не найдено через /v3/topup (вернул ошибку или пустой список)'];
-    diagEl.textContent = lines.join('
-') + '
-
-Всего в API: ' + raw.length + ' сервисов';
+    diagEl.textContent = lines.join('\n') + '\n\nВсего в API: ' + raw.length + ' сервисов';
   } catch(e) {
-    diagEl.textContent = '❌ /v3/topup недоступен: ' + e.message + '
-
-Попробуйте вручную ввести ID топапа в поле выше и нажать «Показать структуру topup» — если сервис существует, он вернёт данные.';
+    diagEl.textContent = '❌ /v3/topup недоступен: ' + e.message + '\n\nПопробуйте вручную ввести ID топапа в поле выше и нажать «Показать структуру topup» — если сервис существует, он вернёт данные.';
   }
 });
 
@@ -5741,6 +5736,14 @@ const observer = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
 }, { threshold: 0.15 });
 document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Fallback: force all reveal elements visible after 800ms
+// (covers cases where IO threshold isn't met or browser quirks)
+setTimeout(function() {
+  document.querySelectorAll('.reveal:not(.visible)').forEach(function(el) {
+    el.classList.add('visible');
+  });
+}, 800);
 
 /* ─── GLOBAL SEARCH ─── */
 (function() {

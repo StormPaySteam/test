@@ -2918,6 +2918,24 @@ body.admin-mode .wata-card:hover .wata-icon-edit-btn { display: flex; }
     </div>
 
     <div class="admin-section">
+      <div class="admin-section-title">Steam &amp; Telegram Stars — ID сервисов</div>
+      <div style="font-size:12px;color:var(--text-tertiary);margin-bottom:10px;line-height:1.5">
+        Укажите ID сервисов из WATA API для разделов пополнения. Найти ID можно через диагностику «Поиск игр» ниже — введите «steam» или «telegram stars» в консоли.
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <label style="font-size:12px;color:var(--text-secondary);min-width:90px;flex-shrink:0">Steam ID:</label>
+          <input class="admin-markup-input" id="steamServiceIdInput" type="text" placeholder="напр. 42" style="flex:1;width:auto;font-size:13px">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <label style="font-size:12px;color:var(--text-secondary);min-width:90px;flex-shrink:0">TG Stars ID:</label>
+          <input class="admin-markup-input" id="tgStarsServiceIdInput" type="text" placeholder="напр. 77" style="flex:1;width:auto;font-size:13px">
+        </div>
+        <button class="btn-markup-save" id="saveTopupIdsBtn" style="width:fit-content">Сохранить</button>
+      </div>
+    </div>
+
+    <div class="admin-section">
       <div class="admin-section-title">Пользовательское соглашение</div>
       <textarea class="admin-tos-area" id="adminTosText" placeholder="Введите текст пользовательского соглашения...&#10;&#10;Используйте обычный текст, переносы строк сохраняются."></textarea>
       <button class="btn-admin-save" id="saveTosBtn">💾 Сохранить соглашение</button>
@@ -2957,6 +2975,7 @@ body.admin-mode .wata-card:hover .wata-icon-edit-btn { display: flex; }
       <button class="btn-secondary" id="rawTopupBtn" style="width:100%;font-size:13px;padding:10px;margin-top:8px;">🧬 Показать структуру topup полей (введите ID)</button>
       <input class="form-input" id="rawTopupId" placeholder="ID топапа (напр: 123)" style="margin-top:6px;font-size:12px;">
       <button class="btn-secondary" id="searchGamesBtn" style="width:100%;font-size:13px;padding:10px;margin-top:8px;">🎮 Найти ID игр (Minecraft, Roblox и др.)</button>
+      <button class="btn-secondary" id="searchSteamTgBtn" style="width:100%;font-size:13px;padding:10px;margin-top:8px;">🔎 Найти ID Steam &amp; Telegram Stars</button>
       <div id="apiDiagResult" style="margin-top:10px;font-size:11px;color:var(--text-tertiary);font-family:'SF Mono','Fira Code',monospace;word-break:break-all;line-height:1.6;display:none;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:10px;padding:10px 14px;white-space:pre-wrap;max-height:400px;overflow-y:auto;"></div>
     </div>
 
@@ -5495,10 +5514,19 @@ function toggleAdmin() {
     document.getElementById('adminMarkupInput').value = pct > 0 ? pct : '';
     document.getElementById('currentMarkupLabel').textContent = pct + '%';
     updateMarkupPreview(pct);
+    // Подтянуть ID сервисов Steam/TG
+    const sId = getSteamServiceId ? getSteamServiceId() : '';
+    const tId = getTgStarsServiceId ? getTgStarsServiceId() : '';
+    const sInput = document.getElementById('steamServiceIdInput');
+    const tInput = document.getElementById('tgStarsServiceIdInput');
+    if (sInput) sInput.value = sId;
+    if (tInput) tInput.value = tId;
     // Populate icon manager list
     refreshAdminIconPanel();
   }
 }
+document.getElementById('saveTopupIdsBtn')?.addEventListener('click', saveTopupServiceIds);
+
 document.getElementById('saveTosBtn').addEventListener('click', () => {
   const text = document.getElementById('adminTosText').value.trim();
   saveTos(text);
@@ -5665,6 +5693,32 @@ document.getElementById('searchGamesBtn').addEventListener('click', async () => 
     diagEl.textContent = `❌ Ошибка: ${e.message}`;
   }
 });
+document.getElementById('searchSteamTgBtn').addEventListener('click', async () => {
+  const diagEl = document.getElementById('apiDiagResult');
+  diagEl.style.display = 'block';
+  diagEl.textContent = '⏳ Ищу Steam и Telegram Stars в WATA API...';
+  const keywords = ['steam', 'telegram', 'tg star', 'звезд', 'stars'];
+  try {
+    const data = await fetchWata('/v3/topup');
+    const raw = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
+    const found = raw.filter(s => {
+      const n = (s.name || s.title || '').toLowerCase();
+      return keywords.some(k => n.includes(k));
+    });
+    const lines = found.length
+      ? found.map(s => `✅ ID: ${s.id || s.serviceId} | ${s.name || s.title}`)
+      : ['Не найдено через /v3/topup (вернул ошибку или пустой список)'];
+    diagEl.textContent = lines.join('
+') + '
+
+Всего в API: ' + raw.length + ' сервисов';
+  } catch(e) {
+    diagEl.textContent = '❌ /v3/topup недоступен: ' + e.message + '
+
+Попробуйте вручную ввести ID топапа в поле выше и нажать «Показать структуру topup» — если сервис существует, он вернёт данные.';
+  }
+});
+
 document.getElementById('addCertBtn').addEventListener('click', openAddCert);
 
 /* ─── LEGAL TABS ─── */
@@ -5794,27 +5848,52 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 /* ═══════════════════ STEAM TOP-UP ═══════════════════ */
 let _steamServiceId = null;
 let _steamMinAmount = 1;
+const STEAM_ID_KEY = 'appbox_steam_service_id';
+const TG_STARS_ID_KEY = 'appbox_tg_stars_service_id';
+
+function getSteamServiceId() { return localStorage.getItem(STEAM_ID_KEY) || ''; }
+function getTgStarsServiceId() { return localStorage.getItem(TG_STARS_ID_KEY) || ''; }
+function saveTopupServiceIds() {
+  const sId = document.getElementById('steamServiceIdInput')?.value.trim();
+  const tId = document.getElementById('tgStarsServiceIdInput')?.value.trim();
+  if (sId) localStorage.setItem(STEAM_ID_KEY, sId);
+  else localStorage.removeItem(STEAM_ID_KEY);
+  if (tId) localStorage.setItem(TG_STARS_ID_KEY, tId);
+  else localStorage.removeItem(TG_STARS_ID_KEY);
+  alert('✅ ID сохранены. Перезагрузите страницу для применения.');
+}
+
+function showTopupNotConfigured(sectionPrefix, serviceName) {
+  document.getElementById(sectionPrefix + 'Loading').style.display = 'none';
+  document.getElementById(sectionPrefix + 'Form').style.display = '';
+  const errEl = document.getElementById(sectionPrefix === 'steamTopup' ? 'steamTopupError' : 'tgStarsError');
+  if (errEl) {
+    errEl.style.display = '';
+    errEl.innerHTML = '⚙️ Раздел <b>' + serviceName + '</b> не настроен. Откройте панель администратора и укажите ID сервиса WATA.';
+  }
+  // Disable submit button
+  const btn = document.getElementById(sectionPrefix === 'steamTopup' ? 'steamSubmitBtn' : 'tgStarsSubmitBtn');
+  if (btn) { btn.disabled = true; }
+}
 
 async function loadSteamTopup() {
+  const configuredId = getSteamServiceId();
+  if (!configuredId) {
+    showTopupNotConfigured('steamTopup', 'Steam');
+    return;
+  }
+  _steamServiceId = configuredId;
   try {
-    const data = await fetchWata('/v3/topup');
-    const raw = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
-    const steamSvc = raw.find(s => {
-      const n = (s.name || s.title || '').toLowerCase();
-      return n.includes('steam') && !n.includes('gift') && !n.includes('card');
-    }) || raw.find(s => (s.name || s.title || '').toLowerCase().includes('steam'));
-    if (!steamSvc) throw new Error('Steam service not found');
-    _steamServiceId = String(steamSvc.id || steamSvc.serviceId);
-    // Fetch products to find min amount
     const detail = await fetchWata('/v3/topup/' + _steamServiceId);
     const products = (detail.details?.products || detail.products || []).filter(p => p.isAvailable !== false);
     if (products.length) {
-      // Use flexible input - min from first product
       const first = products[0];
       _steamMinAmount = first.minPrice || first.price || 1;
     }
+    console.log('[Steam] loaded service ID:', _steamServiceId);
   } catch(e) {
     console.warn('[Steam] load error:', e.message);
+    // Still show the form — user can still try to submit
   }
   document.getElementById('steamTopupLoading').style.display = 'none';
   document.getElementById('steamTopupForm').style.display = '';
@@ -5901,38 +5980,28 @@ let _tgStarsServiceId = null;
 let _tgStarsPricePerStar = null; // price in RUB per 1 star
 
 async function loadTgStars() {
+  const configuredId = getTgStarsServiceId();
+  if (!configuredId) {
+    showTopupNotConfigured('tgStars', 'Telegram Stars');
+    return;
+  }
+  _tgStarsServiceId = configuredId;
   try {
-    const data = await fetchWata('/v3/topup');
-    const raw = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
-    const tgSvc = raw.find(s => {
-      const n = (s.name || s.title || '').toLowerCase();
-      return (n.includes('telegram') || n.includes('tg')) && (n.includes('star') || n.includes('звезд'));
-    }) || raw.find(s => {
-      const n = (s.name || s.title || '').toLowerCase();
-      return n.includes('telegram');
-    });
-    if (!tgSvc) throw new Error('Telegram Stars service not found');
-    _tgStarsServiceId = String(tgSvc.id || tgSvc.serviceId);
-    // Fetch detail to find price per star
     const detail = await fetchWata('/v3/topup/' + _tgStarsServiceId);
     const products = (detail.details?.products || detail.products || []).filter(p => p.isAvailable !== false);
     if (products.length) {
-      // Find price per unit (star)
       const sample = products[0];
+      // Try various ways to get per-star price
       const pp = sample.pricePerUnit || sample.unitPrice || null;
       if (pp) {
         _tgStarsPricePerStar = applyMarkup(pp);
-      } else if (sample.minPrice && sample.minQuantity) {
+      } else if (sample.minPrice && sample.minQuantity && sample.minQuantity > 1) {
         _tgStarsPricePerStar = applyMarkup(sample.minPrice / sample.minQuantity);
       } else if (sample.minPrice) {
-        // Assume single unit
         _tgStarsPricePerStar = applyMarkup(sample.minPrice);
       }
     }
-    // Fallback rate from price field
-    if (!_tgStarsPricePerStar && tgSvc.minPrice) {
-      _tgStarsPricePerStar = applyMarkup(tgSvc.minPrice);
-    }
+    console.log('[TgStars] loaded service ID:', _tgStarsServiceId, 'rate:', _tgStarsPricePerStar);
   } catch(e) {
     console.warn('[TgStars] load error:', e.message);
   }

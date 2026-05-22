@@ -2407,23 +2407,22 @@ body.admin-mode .wata-card:hover .wata-icon-edit-btn { display: flex; }
       </div>
     </div>
     <div id="steamTopupContainer">
-      <div id="steamTopupLoading" style="text-align:center;padding:40px;color:var(--text-tertiary)">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;display:inline-block"><path d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74"/></svg>
-        <div style="margin-top:8px;font-size:13px">Загрузка...</div>
-      </div>
-      <div id="steamTopupForm" style="display:none">
+      <div id="steamTopupLoading" style="display:none"></div>
+      <div id="steamTopupForm">
         <div class="topup-form-card" style="max-width:520px;margin:0 auto">
           <div class="topup-form-header">
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:0.9"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.97 3.61 9.12 8.38 9.88l-2.3-4.76a2.5 2.5 0 01-.08-.49A2.5 2.5 0 0110.5 14c.12 0 .23.01.34.03L13.5 9.5a3.5 3.5 0 013.5-3.5 3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5h-.08l-4.61 2.88c0 .04.01.08.01.12a2 2 0 01-2 2 2 2 0 01-1.99-1.84l-4.09-1.7A10.01 10.01 0 012 12C2 6.48 6.48 2 12 2z" fill="#c6d4df"/></svg>
             <h3 class="topup-form-title">Мгновенное зачисление<br>средств на ваш аккаунт</h3>
           </div>
           <div class="topup-form-body">
-            <input id="steamAccountInput" class="topup-input" type="text" placeholder="Имя аккаунта Steam" autocomplete="off" spellcheck="false">
+            <input id="steamAccountInput" class="topup-input" type="text" placeholder="Имя аккаунта Steam" autocomplete="off" spellcheck="false"
+              oninput="triggerSteamPriceUpdate()" onblur="triggerSteamPriceUpdate()">
             <div class="topup-amount-wrap">
               <span class="topup-currency-sign">₽</span>
-              <input id="steamAmountInput" class="topup-input topup-input-amount" type="number" min="1" placeholder="Введите сумму">
+              <input id="steamAmountInput" class="topup-input topup-input-amount" type="number" min="100" max="50000" placeholder="Сумма пополнения (₽)"
+                oninput="triggerSteamPriceUpdate()" onblur="triggerSteamPriceUpdate()">
             </div>
-            <div class="topup-total-bar" id="steamTotalBar">0.00 ₽ к оплате</div>
+            <div class="topup-total-bar" id="steamTotalBar" style="opacity:0.7">0.00 ₽ к оплате</div>
             <div class="topup-quick-btns" id="steamQuickBtns">
               <button class="topup-quick-btn" onclick="setSteamAmount(500)">500₽</button>
               <button class="topup-quick-btn" onclick="setSteamAmount(1000)">1000₽</button>
@@ -2455,21 +2454,20 @@ body.admin-mode .wata-card:hover .wata-icon-edit-btn { display: flex; }
       </div>
     </div>
     <div id="tgStarsContainer">
-      <div id="tgStarsLoading" style="text-align:center;padding:40px;color:var(--text-tertiary)">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;display:inline-block"><path d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74"/></svg>
-        <div style="margin-top:8px;font-size:13px">Загрузка...</div>
-      </div>
-      <div id="tgStarsForm" style="display:none">
+      <div id="tgStarsLoading" style="display:none"></div>
+      <div id="tgStarsForm">
         <div class="topup-form-card" style="max-width:520px;margin:0 auto">
           <div class="topup-form-header">
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:0.9"><path d="M21.73 3.22L1.5 10.67c-.83.32-.82 1.56.01 1.87l4.88 1.78 1.89 5.84c.27.83 1.38.99 1.87.27l2.62-3.78 5.14 3.78c.68.5 1.64.14 1.82-.69l3.27-15.3c.2-.96-.75-1.72-1.27-1.22z" fill="#1c93e3"/></svg>
             <h3 class="topup-form-title">Быстрое пополнение<br>звёзд в Telegram</h3>
           </div>
           <div class="topup-form-body">
-            <input id="tgUsernameInput" class="topup-input" type="text" placeholder="Ваш @username" autocomplete="off" spellcheck="false">
+            <input id="tgUsernameInput" class="topup-input" type="text" placeholder="Ваш @username" autocomplete="off" spellcheck="false"
+              oninput="onTgUsernameChange()" onblur="onTgUsernameChange()">
             <div class="topup-amount-wrap">
               <span class="topup-currency-sign">⭐</span>
-              <input id="tgStarsInput" class="topup-input topup-input-amount" type="number" min="1" placeholder="Введите количество">
+              <input id="tgStarsInput" class="topup-input topup-input-amount" type="number" min="50" max="50000" placeholder="Количество звёзд (от 50)"
+                oninput="updateTgStarsTotal()">
             </div>
             <div class="topup-total-bar" id="tgStarsTotalBar">1 ⭐ = <span id="tgStarsRate">—</span> ₽</div>
             <div class="topup-quick-btns">
@@ -2918,24 +2916,6 @@ body.admin-mode .wata-card:hover .wata-icon-edit-btn { display: flex; }
     </div>
 
     <div class="admin-section">
-      <div class="admin-section-title">Steam &amp; Telegram Stars — ID сервисов</div>
-      <div style="font-size:12px;color:var(--text-tertiary);margin-bottom:10px;line-height:1.5">
-        Укажите ID сервисов из WATA API для разделов пополнения. Найти ID можно через диагностику «Поиск игр» ниже — введите «steam» или «telegram stars» в консоли.
-      </div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div style="display:flex;gap:8px;align-items:center">
-          <label style="font-size:12px;color:var(--text-secondary);min-width:90px;flex-shrink:0">Steam ID:</label>
-          <input class="admin-markup-input" id="steamServiceIdInput" type="text" placeholder="напр. 42" style="flex:1;width:auto;font-size:13px">
-        </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <label style="font-size:12px;color:var(--text-secondary);min-width:90px;flex-shrink:0">TG Stars ID:</label>
-          <input class="admin-markup-input" id="tgStarsServiceIdInput" type="text" placeholder="напр. 77" style="flex:1;width:auto;font-size:13px">
-        </div>
-        <button class="btn-markup-save" id="saveTopupIdsBtn" style="width:fit-content">Сохранить</button>
-      </div>
-    </div>
-
-    <div class="admin-section">
       <div class="admin-section-title">Пользовательское соглашение</div>
       <textarea class="admin-tos-area" id="adminTosText" placeholder="Введите текст пользовательского соглашения...&#10;&#10;Используйте обычный текст, переносы строк сохраняются."></textarea>
       <button class="btn-admin-save" id="saveTosBtn">💾 Сохранить соглашение</button>
@@ -2975,7 +2955,6 @@ body.admin-mode .wata-card:hover .wata-icon-edit-btn { display: flex; }
       <button class="btn-secondary" id="rawTopupBtn" style="width:100%;font-size:13px;padding:10px;margin-top:8px;">🧬 Показать структуру topup полей (введите ID)</button>
       <input class="form-input" id="rawTopupId" placeholder="ID топапа (напр: 123)" style="margin-top:6px;font-size:12px;">
       <button class="btn-secondary" id="searchGamesBtn" style="width:100%;font-size:13px;padding:10px;margin-top:8px;">🎮 Найти ID игр (Minecraft, Roblox и др.)</button>
-      <button class="btn-secondary" id="searchSteamTgBtn" style="width:100%;font-size:13px;padding:10px;margin-top:8px;">🔎 Найти ID Steam &amp; Telegram Stars</button>
       <div id="apiDiagResult" style="margin-top:10px;font-size:11px;color:var(--text-tertiary);font-family:'SF Mono','Fira Code',monospace;word-break:break-all;line-height:1.6;display:none;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.10);border-radius:10px;padding:10px 14px;white-space:pre-wrap;max-height:400px;overflow-y:auto;"></div>
     </div>
 
@@ -4488,6 +4467,10 @@ function extractFailDetails(data) {
 async function checkOrderStatusOnce(orderId, type, silentIfPending) {
   const endpoint = type === 'voucher'
     ? `/v3/vouchers/order/${orderId}`
+    : type === 'steam'
+    ? `/v3/steam/order/${orderId}`
+    : type === 'stars'
+    ? `/stars/order/${orderId}`
     : `/v3/topup/orders/${orderId}`;
   try {
     const data = await fetchWata(endpoint);
@@ -4554,6 +4537,10 @@ function startPolling(orderId, type) {
     try {
       const endpoint = type === 'voucher'
         ? `/v3/vouchers/order/${orderId}`
+        : type === 'steam'
+        ? `/v3/steam/order/${orderId}`
+        : type === 'stars'
+        ? `/stars/order/${orderId}`
         : `/v3/topup/orders/${orderId}`;
       const data = await fetchWata(endpoint);
 
@@ -5515,18 +5502,10 @@ function toggleAdmin() {
     document.getElementById('currentMarkupLabel').textContent = pct + '%';
     updateMarkupPreview(pct);
     // Подтянуть ID сервисов Steam/TG
-    const sId = getSteamServiceId ? getSteamServiceId() : '';
-    const tId = getTgStarsServiceId ? getTgStarsServiceId() : '';
-    const sInput = document.getElementById('steamServiceIdInput');
-    const tInput = document.getElementById('tgStarsServiceIdInput');
-    if (sInput) sInput.value = sId;
-    if (tInput) tInput.value = tId;
     // Populate icon manager list
     refreshAdminIconPanel();
   }
 }
-document.getElementById('saveTopupIdsBtn')?.addEventListener('click', saveTopupServiceIds);
-
 document.getElementById('saveTosBtn').addEventListener('click', () => {
   const text = document.getElementById('adminTosText').value.trim();
   saveTos(text);
@@ -5693,27 +5672,6 @@ document.getElementById('searchGamesBtn').addEventListener('click', async () => 
     diagEl.textContent = `❌ Ошибка: ${e.message}`;
   }
 });
-document.getElementById('searchSteamTgBtn').addEventListener('click', async () => {
-  const diagEl = document.getElementById('apiDiagResult');
-  diagEl.style.display = 'block';
-  diagEl.textContent = '⏳ Ищу Steam и Telegram Stars в WATA API...';
-  const keywords = ['steam', 'telegram', 'tg star', 'звезд', 'stars'];
-  try {
-    const data = await fetchWata('/v3/topup');
-    const raw = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
-    const found = raw.filter(s => {
-      const n = (s.name || s.title || '').toLowerCase();
-      return keywords.some(k => n.includes(k));
-    });
-    const lines = found.length
-      ? found.map(s => `✅ ID: ${s.id || s.serviceId} | ${s.name || s.title}`)
-      : ['Не найдено через /v3/topup (вернул ошибку или пустой список)'];
-    diagEl.textContent = lines.join('\n') + '\n\nВсего в API: ' + raw.length + ' сервисов';
-  } catch(e) {
-    diagEl.textContent = '❌ /v3/topup недоступен: ' + e.message + '\n\nПопробуйте вручную ввести ID топапа в поле выше и нажать «Показать структуру topup» — если сервис существует, он вернёт данные.';
-  }
-});
-
 document.getElementById('addCertBtn').addEventListener('click', openAddCert);
 
 /* ─── LEGAL TABS ─── */
@@ -5849,55 +5807,11 @@ setTimeout(function() {
 })();
 
 /* ═══════════════════ STEAM TOP-UP ═══════════════════ */
-let _steamServiceId = null;
-let _steamMinAmount = 1;
-const STEAM_ID_KEY = 'appbox_steam_service_id';
-const TG_STARS_ID_KEY = 'appbox_tg_stars_service_id';
 
-function getSteamServiceId() { return localStorage.getItem(STEAM_ID_KEY) || ''; }
-function getTgStarsServiceId() { return localStorage.getItem(TG_STARS_ID_KEY) || ''; }
-function saveTopupServiceIds() {
-  const sId = document.getElementById('steamServiceIdInput')?.value.trim();
-  const tId = document.getElementById('tgStarsServiceIdInput')?.value.trim();
-  if (sId) localStorage.setItem(STEAM_ID_KEY, sId);
-  else localStorage.removeItem(STEAM_ID_KEY);
-  if (tId) localStorage.setItem(TG_STARS_ID_KEY, tId);
-  else localStorage.removeItem(TG_STARS_ID_KEY);
-  alert('✅ ID сохранены. Перезагрузите страницу для применения.');
-}
-
-function showTopupNotConfigured(sectionPrefix, serviceName) {
-  document.getElementById(sectionPrefix + 'Loading').style.display = 'none';
-  document.getElementById(sectionPrefix + 'Form').style.display = '';
-  const errEl = document.getElementById(sectionPrefix === 'steamTopup' ? 'steamTopupError' : 'tgStarsError');
-  if (errEl) {
-    errEl.style.display = '';
-    errEl.innerHTML = '⚙️ Раздел <b>' + serviceName + '</b> не настроен. Откройте панель администратора и укажите ID сервиса WATA.';
-  }
-  // Disable submit button
-  const btn = document.getElementById(sectionPrefix === 'steamTopup' ? 'steamSubmitBtn' : 'tgStarsSubmitBtn');
-  if (btn) { btn.disabled = true; }
-}
+// Кэш последнего расчёта цены Steam
+let _steamPriceCache = null; // { account, netAmount, minPrice, customerAmount }
 
 async function loadSteamTopup() {
-  const configuredId = getSteamServiceId();
-  if (!configuredId) {
-    showTopupNotConfigured('steamTopup', 'Steam');
-    return;
-  }
-  _steamServiceId = configuredId;
-  try {
-    const detail = await fetchWata('/v3/topup/' + _steamServiceId);
-    const products = (detail.details?.products || detail.products || []).filter(p => p.isAvailable !== false);
-    if (products.length) {
-      const first = products[0];
-      _steamMinAmount = first.minPrice || first.price || 1;
-    }
-    console.log('[Steam] loaded service ID:', _steamServiceId);
-  } catch(e) {
-    console.warn('[Steam] load error:', e.message);
-    // Still show the form — user can still try to submit
-  }
   document.getElementById('steamTopupLoading').style.display = 'none';
   document.getElementById('steamTopupForm').style.display = '';
   updateSteamTotal();
@@ -5908,66 +5822,102 @@ function setSteamAmount(val) {
   document.querySelectorAll('#steamQuickBtns .topup-quick-btn').forEach(b => {
     b.classList.toggle('active', parseFloat(b.textContent) === val);
   });
-  updateSteamTotal();
+  triggerSteamPriceUpdate();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const steamAmt = document.getElementById('steamAmountInput');
-  if (steamAmt) {
-    steamAmt.addEventListener('input', () => {
-      document.querySelectorAll('#steamQuickBtns .topup-quick-btn').forEach(b => b.classList.remove('active'));
-      updateSteamTotal();
-    });
+// Вычисляем цену для клиента: запрашиваем у WATA minPrice и применяем наценку
+let _steamPriceTimer = null;
+function triggerSteamPriceUpdate() {
+  clearTimeout(_steamPriceTimer);
+  const account = document.getElementById('steamAccountInput')?.value.trim();
+  const netAmount = parseFloat(document.getElementById('steamAmountInput')?.value);
+  if (!account || !netAmount || netAmount < 1) {
+    updateSteamTotalBar(0, null);
+    return;
   }
-  const tgStarsInp = document.getElementById('tgStarsInput');
-  if (tgStarsInp) {
-    tgStarsInp.addEventListener('input', () => {
-      document.querySelectorAll('#tgStarsForm .topup-quick-btn').forEach(b => b.classList.remove('active'));
-      updateTgStarsTotal();
-    });
-  }
-});
+  updateSteamTotalBar(null, 'loading');
+  _steamPriceTimer = setTimeout(async () => {
+    try {
+      const data = await fetchWata(`/v3/steam/amount?NetAmount=${netAmount}&Account=${encodeURIComponent(account)}`);
+      const minPrice = data.minPrice || data.price || null;
+      if (!minPrice) throw new Error('Не удалось получить цену');
+      const customerAmount = Math.ceil(applyMarkup(minPrice) * 100) / 100;
+      _steamPriceCache = { account, netAmount, minPrice, customerAmount };
+      updateSteamTotalBar(customerAmount, null);
+    } catch(e) {
+      _steamPriceCache = null;
+      updateSteamTotalBar(null, e.message);
+    }
+  }, 700);
+}
 
-function updateSteamTotal() {
-  const raw = parseFloat(document.getElementById('steamAmountInput')?.value) || 0;
-  const total = raw > 0 ? applyMarkup(raw) : 0;
+function updateSteamTotalBar(amount, state) {
   const bar = document.getElementById('steamTotalBar');
-  if (bar) bar.textContent = total > 0 ? total.toLocaleString('ru-RU', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ₽ к оплате' : '0.00 ₽ к оплате';
+  if (!bar) return;
+  if (state === 'loading') {
+    bar.textContent = '⏳ Рассчитываем стоимость...';
+    bar.style.opacity = '0.6';
+  } else if (state) {
+    bar.textContent = '— не удалось получить цену —';
+    bar.style.opacity = '0.5';
+  } else if (amount && amount > 0) {
+    bar.textContent = amount.toLocaleString('ru-RU', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ₽ к оплате';
+    bar.style.opacity = '1';
+  } else {
+    bar.textContent = '0.00 ₽ к оплате';
+    bar.style.opacity = '0.7';
+  }
 }
 
 async function submitSteamTopup() {
   const account = document.getElementById('steamAccountInput').value.trim();
-  const amountRaw = parseFloat(document.getElementById('steamAmountInput').value);
+  const netAmount = parseFloat(document.getElementById('steamAmountInput').value);
   const email = document.getElementById('steamEmailInput').value.trim();
   const errEl = document.getElementById('steamTopupError');
   errEl.style.display = 'none';
 
   if (!account) { errEl.textContent = 'Введите имя аккаунта Steam'; errEl.style.display = ''; return; }
-  if (!amountRaw || amountRaw < 1) { errEl.textContent = 'Введите сумму пополнения'; errEl.style.display = ''; return; }
+  if (!netAmount || netAmount < 100) { errEl.textContent = 'Минимальная сумма пополнения — 100 ₽'; errEl.style.display = ''; return; }
+  if (netAmount > 50000) { errEl.textContent = 'Максимальная сумма — 50 000 ₽'; errEl.style.display = ''; return; }
   if (!email || !email.includes('@')) { errEl.textContent = 'Введите корректный email'; errEl.style.display = ''; return; }
-  if (!_steamServiceId) { errEl.textContent = 'Сервис Steam временно недоступен'; errEl.style.display = ''; return; }
 
-  const amount = applyMarkup(amountRaw);
   const btn = document.getElementById('steamSubmitBtn');
   btn.disabled = true;
   btn.textContent = '⏳ Обрабатываем...';
 
+  // Получаем или обновляем цену перед созданием заказа
+  let minPrice = null;
+  let customerAmount = null;
+  try {
+    const priceData = await fetchWata(`/v3/steam/amount?NetAmount=${netAmount}&Account=${encodeURIComponent(account)}`);
+    minPrice = priceData.minPrice || priceData.price;
+    if (!minPrice) throw new Error('Не удалось получить цену');
+    customerAmount = Math.ceil(applyMarkup(minPrice) * 100) / 100;
+  } catch(e) {
+    errEl.textContent = 'Ошибка расчёта цены: ' + e.message;
+    errEl.style.display = '';
+    btn.disabled = false;
+    btn.textContent = 'Пополнить';
+    return;
+  }
+
   const orderId = genOrderId();
   const body = {
-    topupId: _steamServiceId,
+    account,
+    amount: customerAmount,
+    netAmount,
+    description: 'Пополнение Steam: ' + account,
     orderId,
     email,
-    amount: Math.ceil(amount * 100) / 100,
-    description: 'Пополнение Steam: ' + account,
     successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
     failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
-    fields: { Input1: account }
   };
 
   try {
-    const result = await fetchWata('/v3/topup', { method: 'POST', body: JSON.stringify(body) });
-    wmCurrentOrder = { orderId, type: 'topup' };
-    openPaymentWindow(result.paymentLink, orderId, 'topup');
+    console.log('[Steam] POST /v3/steam body:', JSON.stringify(body, null, 2));
+    const result = await fetchWata('/v3/steam', { method: 'POST', body: JSON.stringify(body) });
+    wmCurrentOrder = { orderId, type: 'steam' };
+    openPaymentWindow(result.paymentLink, orderId, 'steam');
     btn.disabled = false;
     btn.textContent = 'Пополнить';
   } catch(e) {
@@ -5979,43 +5929,52 @@ async function submitSteamTopup() {
 }
 
 /* ═══════════════════ TELEGRAM STARS ═══════════════════ */
-let _tgStarsServiceId = null;
-let _tgStarsPricePerStar = null; // price in RUB per 1 star
+let _tgStarsMinPrice = null; // minPrice per 1 star from API (before our markup)
+let _tgStarsUsername = '';
 
 async function loadTgStars() {
-  const configuredId = getTgStarsServiceId();
-  if (!configuredId) {
-    showTopupNotConfigured('tgStars', 'Telegram Stars');
-    return;
-  }
-  _tgStarsServiceId = configuredId;
-  try {
-    const detail = await fetchWata('/v3/topup/' + _tgStarsServiceId);
-    const products = (detail.details?.products || detail.products || []).filter(p => p.isAvailable !== false);
-    if (products.length) {
-      const sample = products[0];
-      // Try various ways to get per-star price
-      const pp = sample.pricePerUnit || sample.unitPrice || null;
-      if (pp) {
-        _tgStarsPricePerStar = applyMarkup(pp);
-      } else if (sample.minPrice && sample.minQuantity && sample.minQuantity > 1) {
-        _tgStarsPricePerStar = applyMarkup(sample.minPrice / sample.minQuantity);
-      } else if (sample.minPrice) {
-        _tgStarsPricePerStar = applyMarkup(sample.minPrice);
-      }
-    }
-    console.log('[TgStars] loaded service ID:', _tgStarsServiceId, 'rate:', _tgStarsPricePerStar);
-  } catch(e) {
-    console.warn('[TgStars] load error:', e.message);
-  }
-
-  const rateEl = document.getElementById('tgStarsRate');
-  if (rateEl && _tgStarsPricePerStar) {
-    rateEl.textContent = _tgStarsPricePerStar.toFixed(2);
-  }
   document.getElementById('tgStarsLoading').style.display = 'none';
   document.getElementById('tgStarsForm').style.display = '';
   updateTgStarsTotal();
+}
+
+// При изменении юзернейма — запрашиваем актуальную цену звезды
+let _tgPriceTimer = null;
+function onTgUsernameChange() {
+  clearTimeout(_tgPriceTimer);
+  const username = document.getElementById('tgUsernameInput')?.value.trim().replace(/^@/, '');
+  if (!username) {
+    _tgStarsMinPrice = null;
+    _tgStarsUsername = '';
+    updateTgRateBar('—');
+    updateTgStarsTotal();
+    return;
+  }
+  updateTgRateBar('⏳');
+  _tgPriceTimer = setTimeout(async () => {
+    try {
+      const data = await fetchWata(`/stars/price?Username=${encodeURIComponent(username)}`);
+      _tgStarsMinPrice = data.minPrice || data.starPrice || null;
+      _tgStarsUsername = username;
+      if (_tgStarsMinPrice) {
+        const rate = applyMarkup(_tgStarsMinPrice);
+        updateTgRateBar(rate.toFixed(2));
+      } else {
+        updateTgRateBar('—');
+      }
+      updateTgStarsTotal();
+    } catch(e) {
+      _tgStarsMinPrice = null;
+      _tgStarsUsername = '';
+      updateTgRateBar('нет данных');
+      updateTgStarsTotal();
+    }
+  }, 700);
+}
+
+function updateTgRateBar(rateStr) {
+  const el = document.getElementById('tgStarsRate');
+  if (el) el.textContent = rateStr;
 }
 
 function setTgStars(qty) {
@@ -6029,55 +5988,81 @@ function setTgStars(qty) {
 
 function updateTgStarsTotal() {
   const qty = parseFloat(document.getElementById('tgStarsInput')?.value) || 0;
-  const rate = _tgStarsPricePerStar || 0;
-  const total = qty > 0 && rate > 0 ? qty * rate : 0;
+  const minPrice = _tgStarsMinPrice;
   const bar = document.getElementById('tgStarsTotalBar');
   const rateEl = document.getElementById('tgStarsRate');
-  if (rateEl && rate) rateEl.textContent = rate.toFixed(2);
+
+  if (!minPrice) {
+    if (bar) bar.innerHTML = '1 ⭐ = <span id="tgStarsRate">' + (rateEl ? rateEl.textContent : '—') + '</span> ₽';
+    return;
+  }
+  const rate = applyMarkup(minPrice);
+  if (rateEl) rateEl.textContent = rate.toFixed(2);
   if (bar) {
-    if (qty > 0 && rate > 0) {
+    if (qty > 0) {
+      const total = Math.ceil(qty * rate * 100) / 100;
       bar.innerHTML = qty + ' ⭐ × ' + rate.toFixed(2) + ' = <b>' + total.toLocaleString('ru-RU', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ₽</b>';
     } else {
-      bar.innerHTML = '1 ⭐ = <span id="tgStarsRate">' + (rate ? rate.toFixed(2) : '—') + '</span> ₽';
+      bar.innerHTML = '1 ⭐ = <span id="tgStarsRate">' + rate.toFixed(2) + '</span> ₽';
     }
   }
 }
 
 async function submitTgStarsTopup() {
-  const username = document.getElementById('tgUsernameInput').value.trim().replace(/^@/, '');
-  const qty = parseFloat(document.getElementById('tgStarsInput').value);
+  const rawUsername = document.getElementById('tgUsernameInput').value.trim();
+  const username = rawUsername.replace(/^@/, '');
+  const qty = Math.round(parseFloat(document.getElementById('tgStarsInput').value));
   const email = document.getElementById('tgEmailInput').value.trim();
   const errEl = document.getElementById('tgStarsError');
   errEl.style.display = 'none';
 
   if (!username) { errEl.textContent = 'Введите ваш Telegram @username'; errEl.style.display = ''; return; }
-  if (!qty || qty < 1) { errEl.textContent = 'Введите количество звёзд'; errEl.style.display = ''; return; }
+  if (!qty || qty < 50) { errEl.textContent = 'Минимальное количество звёзд — 50'; errEl.style.display = ''; return; }
+  if (qty > 50000) { errEl.textContent = 'Максимальное количество — 50 000 звёзд'; errEl.style.display = ''; return; }
   if (!email || !email.includes('@')) { errEl.textContent = 'Введите корректный email'; errEl.style.display = ''; return; }
-  if (!_tgStarsServiceId) { errEl.textContent = 'Сервис Telegram Stars временно недоступен'; errEl.style.display = ''; return; }
-
-  const rate = _tgStarsPricePerStar || 0;
-  const amount = rate > 0 ? Math.ceil(qty * rate * 100) / 100 : qty;
 
   const btn = document.getElementById('tgStarsSubmitBtn');
   btn.disabled = true;
   btn.textContent = '⏳ Обрабатываем...';
 
+  // Всегда получаем свежую цену перед созданием заказа
+  let minPrice = _tgStarsMinPrice;
+  try {
+    const priceData = await fetchWata(`/stars/price?Username=${encodeURIComponent(username)}`);
+    minPrice = priceData.minPrice || priceData.starPrice;
+    if (!minPrice) throw new Error('Пользователь не найден или нет данных о цене');
+    _tgStarsMinPrice = minPrice;
+    _tgStarsUsername = username;
+    const rate = applyMarkup(minPrice);
+    updateTgRateBar(rate.toFixed(2));
+    updateTgStarsTotal();
+  } catch(e) {
+    errEl.textContent = 'Ошибка: ' + e.message;
+    errEl.style.display = '';
+    btn.disabled = false;
+    btn.textContent = 'Купить';
+    return;
+  }
+
+  const rate = applyMarkup(minPrice);
+  const amount = Math.ceil(qty * rate * 100) / 100;
+
   const orderId = genOrderId();
   const body = {
-    topupId: _tgStarsServiceId,
-    orderId,
-    email,
+    username,
+    count: qty,
     amount,
     description: 'Telegram Stars × ' + qty + ' для @' + username,
+    orderId,
     successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
     failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
-    fields: { Input1: username, Input2: String(Math.round(qty)) }
   };
 
   try {
-    const result = await fetchWata('/v3/topup', { method: 'POST', body: JSON.stringify(body) });
-    wmCurrentOrder = { orderId, type: 'topup' };
-    openPaymentWindow(result.paymentLink, orderId, 'topup');
+    console.log('[Stars] POST /stars body:', JSON.stringify(body, null, 2));
+    const result = await fetchWata('/stars', { method: 'POST', body: JSON.stringify(body) });
+    wmCurrentOrder = { orderId, type: 'stars' };
+    openPaymentWindow(result.paymentLink, orderId, 'stars');
     btn.disabled = false;
     btn.textContent = 'Купить';
   } catch(e) {
@@ -6087,6 +6072,7 @@ async function submitTgStarsTopup() {
     btn.textContent = 'Купить';
   }
 }
+
 
 /* ═══════════════════ DEEP LINK ROUTING ═══════════════════ */
 async function handleDeepLink() {

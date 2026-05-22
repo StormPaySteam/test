@@ -2449,7 +2449,7 @@ body.admin-mode .wata-card:hover .wata-icon-edit-btn { display: flex; }
         </div>
         <div>
           <div class="section-title">Telegram Stars</div>
-          <div class="section-subtitle">Быстрое пополнение звёзд в Telegram</div>
+          <div class="section-subtitle">Пополнение звёзд · введите @username получателя</div>
         </div>
       </div>
     </div>
@@ -5814,7 +5814,7 @@ let _steamPriceCache = null; // { account, netAmount, minPrice, customerAmount }
 async function loadSteamTopup() {
   document.getElementById('steamTopupLoading').style.display = 'none';
   document.getElementById('steamTopupForm').style.display = '';
-  updateSteamTotal();
+  updateSteamTotalBar(0, null);
 }
 
 function setSteamAmount(val) {
@@ -5894,7 +5894,14 @@ async function submitSteamTopup() {
     if (!minPrice) throw new Error('Не удалось получить цену');
     customerAmount = Math.ceil(applyMarkup(minPrice) * 100) / 100;
   } catch(e) {
-    errEl.textContent = 'Ошибка расчёта цены: ' + e.message;
+    const msg = e.message || '';
+    if (msg.includes('STM_1002') || (msg.includes('400') && msg.toLowerCase().includes('steam'))) {
+      errEl.textContent = '❌ Аккаунт Steam «' + account + '» не найден. Проверьте имя аккаунта (не Steam ID, а логин).';
+    } else if (msg.includes('STM_1003') || msg.includes('100')) {
+      errEl.textContent = '❌ Сумма должна быть от 100 до 50 000 ₽.';
+    } else {
+      errEl.textContent = 'Ошибка расчёта цены: ' + msg;
+    }
     errEl.style.display = '';
     btn.disabled = false;
     btn.textContent = 'Пополнить';
@@ -5959,6 +5966,7 @@ function onTgUsernameChange() {
       if (_tgStarsMinPrice) {
         const rate = applyMarkup(_tgStarsMinPrice);
         updateTgRateBar(rate.toFixed(2));
+        document.getElementById('tgStarsError').style.display = 'none';
       } else {
         updateTgRateBar('—');
       }
@@ -5966,8 +5974,18 @@ function onTgUsernameChange() {
     } catch(e) {
       _tgStarsMinPrice = null;
       _tgStarsUsername = '';
-      updateTgRateBar('нет данных');
+      updateTgRateBar('—');
       updateTgStarsTotal();
+      // Show user-friendly error under username field
+      const errEl = document.getElementById('tgStarsError');
+      const msg = e.message || '';
+      if (msg.includes('400') || msg.toLowerCase().includes('не найден') || msg.includes('STR_100')) {
+        errEl.textContent = '❌ Пользователь @' + username + ' не найден. Проверьте username или попробуйте другой.';
+      } else {
+        errEl.textContent = '⚠️ Не удалось получить курс: ' + msg;
+      }
+      errEl.style.display = '';
+      setTimeout(() => { if (errEl) errEl.style.display = 'none'; }, 5000);
     }
   }, 700);
 }
@@ -6037,7 +6055,12 @@ async function submitTgStarsTopup() {
     updateTgRateBar(rate.toFixed(2));
     updateTgStarsTotal();
   } catch(e) {
-    errEl.textContent = 'Ошибка: ' + e.message;
+    const msg = e.message || '';
+    if (msg.includes('400') || msg.toLowerCase().includes('не найден') || msg.includes('STR_100')) {
+      errEl.textContent = '❌ Пользователь @' + username + ' не найден в системе Telegram Stars. Убедитесь, что аккаунт существует и username указан верно.';
+    } else {
+      errEl.textContent = 'Ошибка: ' + msg;
+    }
     errEl.style.display = '';
     btn.disabled = false;
     btn.textContent = 'Купить';

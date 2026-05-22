@@ -1955,6 +1955,150 @@ body.admin-mode .wata-card:hover .wata-icon-edit-btn { display: flex; }
 }
 .btn-override-reset:hover { background: rgba(239,68,68,0.22); }
 
+/* ═══════════════════ TOPUP FORM CARDS ═══════════════════ */
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.topup-form-card {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: var(--blur-md);
+  -webkit-backdrop-filter: var(--blur-md);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 4px 20px rgba(10,0,40,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.topup-form-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 28px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.topup-form-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  line-height: 1.35;
+  background: linear-gradient(135deg, #fff 30%, #c4b5fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.topup-form-body {
+  padding: 20px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.topup-input {
+  width: 100%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  color: var(--text);
+  font-size: 15px;
+  font-family: inherit;
+  padding: 14px 18px;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.topup-input:focus {
+  border-color: rgba(139,92,246,0.5);
+  background: rgba(255,255,255,0.10);
+}
+.topup-input::placeholder { color: var(--text-tertiary); }
+.topup-amount-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.topup-currency-sign {
+  position: absolute;
+  left: 18px;
+  font-size: 16px;
+  color: var(--text-secondary);
+  pointer-events: none;
+  z-index: 1;
+}
+.topup-input-amount { padding-left: 44px; }
+.topup-total-bar {
+  background: rgba(139,92,246,0.18);
+  border: 1px solid rgba(139,92,246,0.25);
+  border-radius: 14px;
+  padding: 13px 18px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #c4b5fd;
+  text-align: center;
+  letter-spacing: 0.2px;
+}
+.topup-quick-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.topup-quick-btn {
+  flex: 1;
+  min-width: 80px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s var(--transition-smooth);
+  -webkit-tap-highlight-color: transparent;
+}
+.topup-quick-btn:hover {
+  background: rgba(139,92,246,0.22);
+  border-color: rgba(139,92,246,0.4);
+}
+.topup-quick-btn.active {
+  background: rgba(139,92,246,0.30);
+  border-color: rgba(139,92,246,0.6);
+  color: #c4b5fd;
+}
+.topup-submit-btn {
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 800;
+  padding: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.3px;
+  transition: all 0.25s var(--transition-smooth);
+  margin-top: 4px;
+}
+.topup-submit-btn--steam {
+  background: linear-gradient(135deg, #c6ff00 0%, #a3cc00 100%);
+  color: #0d0d0d;
+  box-shadow: 0 6px 24px rgba(198,255,0,0.30);
+}
+.topup-submit-btn--steam:hover {
+  transform: scale(1.02) translateY(-1px);
+  box-shadow: 0 10px 32px rgba(198,255,0,0.45);
+}
+.topup-submit-btn--tg {
+  background: linear-gradient(135deg, #a3cc00 0%, #c6ff00 100%);
+  color: #0d0d0d;
+  box-shadow: 0 6px 24px rgba(163,204,0,0.30);
+}
+.topup-submit-btn--tg:hover {
+  transform: scale(1.02) translateY(-1px);
+  box-shadow: 0 10px 32px rgba(163,204,0,0.45);
+}
+.topup-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+
 
 /* ═══════════════════ HERO AVATAR ═══════════════════ */
 .hero-avatar-wrap {
@@ -2041,6 +2185,8 @@ body.admin-mode .wata-card:hover .wata-icon-edit-btn { display: flex; }
       <li><a href="#giftcards">Подарочные карты</a></li>
       <li><a href="#vouchers">Сервисы</a></li>
       <li><a href="#services">Игры</a></li>
+      <li><a href="#steam-topup">Steam</a></li>
+      <li><a href="#tg-stars">TG Stars</a></li>
       <li><a href="#tos">Документы</a></li>
     </ul>
     <button class="nav-admin-btn" id="adminToggleBtn" style="display:none" aria-hidden="true">⚙️ Панель</button>
@@ -2084,6 +2230,20 @@ body.admin-mode .wata-card:hover .wata-icon-edit-btn { display: flex; }
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="3"/><circle cx="8.5" cy="13" r="1.5" fill="currentColor"/><circle cx="15.5" cy="13" r="1.5" fill="currentColor"/><path d="M12 9v2M12 15v2" stroke-width="2.5"/></svg>
       </span>
       <span>Игры</span>
+      <svg class="mobile-nav-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </a></li>
+    <li><a href="#steam-topup" class="mobile-nav-link">
+      <span class="mobile-nav-icon" style="background:rgba(27,40,56,0.5);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.97 3.61 9.12 8.38 9.88l-2.3-4.76a2.5 2.5 0 01-.08-.49A2.5 2.5 0 0110.5 14c.12 0 .23.01.34.03L13.5 9.5a3.5 3.5 0 013.5-3.5 3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5h-.08l-4.61 2.88c0 .04.01.08.01.12a2 2 0 01-2 2 2 2 0 01-1.99-1.84l-4.09-1.7A10.01 10.01 0 012 12C2 6.48 6.48 2 12 2z" fill="#c6d4df"/></svg>
+      </span>
+      <span>Пополнение Steam</span>
+      <svg class="mobile-nav-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </a></li>
+    <li><a href="#tg-stars" class="mobile-nav-link">
+      <span class="mobile-nav-icon" style="background:rgba(28,147,227,0.25);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M21.73 3.22L1.5 10.67c-.83.32-.82 1.56.01 1.87l4.88 1.78 1.89 5.84c.27.83 1.38.99 1.87.27l2.62-3.78 5.14 3.78c.68.5 1.64.14 1.82-.69l3.27-15.3c.2-.96-.75-1.72-1.27-1.22z" fill="#1c93e3"/></svg>
+      </span>
+      <span>Telegram Stars</span>
       <svg class="mobile-nav-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
     </a></li>
     <li><a href="#tos" class="mobile-nav-link">
@@ -2233,7 +2393,103 @@ body.admin-mode .wata-card:hover .wata-icon-edit-btn { display: flex; }
 
   <div class="section-divider"></div>
 
-  <!-- ══ SECTION 4: LEGAL ══ -->
+  <!-- ══ SECTION 4: STEAM TOPUP ══ -->
+  <section class="section reveal" id="steam-topup">
+    <div class="section-header">
+      <div class="section-title-block">
+        <div class="section-icon" style="background:linear-gradient(135deg,#1b2838,#2a475e);box-shadow:0 6px 20px rgba(27,40,56,0.7),inset 0 1px 0 rgba(255,255,255,0.15);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.97 3.61 9.12 8.38 9.88l-2.3-4.76a2.5 2.5 0 01-.08-.49A2.5 2.5 0 0110.5 14c.12 0 .23.01.34.03L13.5 9.5a3.5 3.5 0 013.5-3.5 3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5h-.08l-4.61 2.88c0 .04.01.08.01.12a2 2 0 01-2 2 2 2 0 01-1.99-1.84l-4.09-1.7A10.01 10.01 0 012 12C2 6.48 6.48 2 12 2z" fill="#c6d4df"/></svg>
+        </div>
+        <div>
+          <div class="section-title">Пополнение Steam</div>
+          <div class="section-subtitle">Мгновенное зачисление средств на ваш аккаунт</div>
+        </div>
+      </div>
+    </div>
+    <div id="steamTopupContainer">
+      <div id="steamTopupLoading" style="text-align:center;padding:40px;color:var(--text-tertiary)">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;display:inline-block"><path d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74"/></svg>
+        <div style="margin-top:8px;font-size:13px">Загрузка...</div>
+      </div>
+      <div id="steamTopupForm" style="display:none">
+        <div class="topup-form-card" style="max-width:520px;margin:0 auto">
+          <div class="topup-form-header">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:0.9"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.97 3.61 9.12 8.38 9.88l-2.3-4.76a2.5 2.5 0 01-.08-.49A2.5 2.5 0 0110.5 14c.12 0 .23.01.34.03L13.5 9.5a3.5 3.5 0 013.5-3.5 3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5h-.08l-4.61 2.88c0 .04.01.08.01.12a2 2 0 01-2 2 2 2 0 01-1.99-1.84l-4.09-1.7A10.01 10.01 0 012 12C2 6.48 6.48 2 12 2z" fill="#c6d4df"/></svg>
+            <h3 class="topup-form-title">Мгновенное зачисление<br>средств на ваш аккаунт</h3>
+          </div>
+          <div class="topup-form-body">
+            <input id="steamAccountInput" class="topup-input" type="text" placeholder="Имя аккаунта Steam" autocomplete="off" spellcheck="false">
+            <div class="topup-amount-wrap">
+              <span class="topup-currency-sign">₽</span>
+              <input id="steamAmountInput" class="topup-input topup-input-amount" type="number" min="1" placeholder="Введите сумму">
+            </div>
+            <div class="topup-total-bar" id="steamTotalBar">0.00 ₽ к оплате</div>
+            <div class="topup-quick-btns" id="steamQuickBtns">
+              <button class="topup-quick-btn" onclick="setSteamAmount(500)">500₽</button>
+              <button class="topup-quick-btn" onclick="setSteamAmount(1180)">1180₽</button>
+              <button class="topup-quick-btn" onclick="setSteamAmount(2150)">2150₽</button>
+              <button class="topup-quick-btn" onclick="setSteamAmount(3400)">3400₽</button>
+            </div>
+            <input id="steamEmailInput" class="topup-input" type="email" placeholder="Email для чека" style="margin-top:8px">
+            <button class="topup-submit-btn topup-submit-btn--steam" id="steamSubmitBtn" onclick="submitSteamTopup()">Залить баланс</button>
+          </div>
+        </div>
+        <div id="steamTopupError" style="display:none;max-width:520px;margin:12px auto 0;padding:12px 16px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:12px;font-size:13px;color:#f87171"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- ══ SECTION 5: TELEGRAM STARS ══ -->
+  <section class="section reveal" id="tg-stars">
+    <div class="section-header">
+      <div class="section-title-block">
+        <div class="section-icon" style="background:linear-gradient(135deg,#1c93e3,#0a72c0);box-shadow:0 6px 20px rgba(28,147,227,0.5),inset 0 1px 0 rgba(255,255,255,0.2);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21.73 3.22L1.5 10.67c-.83.32-.82 1.56.01 1.87l4.88 1.78 1.89 5.84c.27.83 1.38.99 1.87.27l2.62-3.78 5.14 3.78c.68.5 1.64.14 1.82-.69l3.27-15.3c.2-.96-.75-1.72-1.27-1.22z" fill="white"/></svg>
+        </div>
+        <div>
+          <div class="section-title">Telegram Stars</div>
+          <div class="section-subtitle">Быстрое пополнение звёзд в Telegram</div>
+        </div>
+      </div>
+    </div>
+    <div id="tgStarsContainer">
+      <div id="tgStarsLoading" style="text-align:center;padding:40px;color:var(--text-tertiary)">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;display:inline-block"><path d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74"/></svg>
+        <div style="margin-top:8px;font-size:13px">Загрузка...</div>
+      </div>
+      <div id="tgStarsForm" style="display:none">
+        <div class="topup-form-card" style="max-width:520px;margin:0 auto">
+          <div class="topup-form-header">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:0.9"><path d="M21.73 3.22L1.5 10.67c-.83.32-.82 1.56.01 1.87l4.88 1.78 1.89 5.84c.27.83 1.38.99 1.87.27l2.62-3.78 5.14 3.78c.68.5 1.64.14 1.82-.69l3.27-15.3c.2-.96-.75-1.72-1.27-1.22z" fill="#1c93e3"/></svg>
+            <h3 class="topup-form-title">Быстрое пополнение<br>звёзд в Telegram</h3>
+          </div>
+          <div class="topup-form-body">
+            <input id="tgUsernameInput" class="topup-input" type="text" placeholder="Ваш @username" autocomplete="off" spellcheck="false">
+            <div class="topup-amount-wrap">
+              <span class="topup-currency-sign">⭐</span>
+              <input id="tgStarsInput" class="topup-input topup-input-amount" type="number" min="1" placeholder="Введите количество">
+            </div>
+            <div class="topup-total-bar" id="tgStarsTotalBar">1 ⭐ = <span id="tgStarsRate">—</span> ₽</div>
+            <div class="topup-quick-btns">
+              <button class="topup-quick-btn" onclick="setTgStars(100)">100 ⭐</button>
+              <button class="topup-quick-btn" onclick="setTgStars(500)">500 ⭐</button>
+              <button class="topup-quick-btn" onclick="setTgStars(1500)">1500 ⭐</button>
+              <button class="topup-quick-btn" onclick="setTgStars(2500)">2500 ⭐</button>
+            </div>
+            <input id="tgEmailInput" class="topup-input" type="email" placeholder="Email для чека" style="margin-top:8px">
+            <button class="topup-submit-btn topup-submit-btn--tg" id="tgStarsSubmitBtn" onclick="submitTgStarsTopup()">Купить</button>
+          </div>
+        </div>
+        <div id="tgStarsError" style="display:none;max-width:520px;margin:12px auto 0;padding:12px 16px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:12px;font-size:13px;color:#f87171"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- ══ SECTION 6: LEGAL ══ -->
   <section class="section reveal" id="tos">
     <div class="section-header">
       <div class="section-title-block">
@@ -3093,6 +3349,8 @@ function openCertDetail(c) {
   const descLinkRow = document.getElementById('cdDescLinkRow');
   if (c.link) { descLink.href = c.link; descLinkRow.style.display = ''; }
   else { descLinkRow.style.display = 'none'; }
+  // Update URL for deep linking
+  try { history.replaceState(null, '', '#cert-' + encodeURIComponent(c.id)); } catch(e) {}
   document.getElementById('certDetailModal').classList.add('open');
 }
 
@@ -3910,6 +4168,8 @@ async function startVoucherPurchase(voucher) {
 
 /* ─── TOPUP DETAIL ─── */
 async function openTopupDetail(id, name, img) {
+  // Update URL for deep linking
+  try { history.replaceState(null, '', '#topup-' + encodeURIComponent(id)); } catch(e) {}
   document.getElementById('wmTitle').textContent = name;
   const hiEl = document.getElementById('wmHeaderImg');
 
@@ -4739,6 +4999,7 @@ function renderBrandCards(brands, grid) {
     div.className = 'wata-service-card';
     div.style.animationDelay = (i * 0.04) + 's';
     if (isMock) div.style.opacity = '0.5';
+    div.dataset.serviceId = String(id);
 
     const iconEl = document.createElement('img');
     iconEl.className = 'wata-service-icon';
@@ -5097,6 +5358,7 @@ function renderServiceCards(items, grid, onOpen) {
     div.className = 'wata-service-card';
     div.style.animationDelay = (i * 0.04) + 's';
     if (isMock) div.style.opacity = '0.5';
+    div.dataset.serviceId = String(id);
 
     const iconEl = document.createElement('img');
     iconEl.className = 'wata-service-icon';
@@ -5179,11 +5441,15 @@ async function loadServices() {
 
 /* ─── MODAL CLOSE ─── */
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function resetUrlHash() {
+  try { history.replaceState(null, '', location.pathname + location.search); } catch(e) {}
+}
 document.getElementById('certModalClose').onclick = () => closeModal('certModal');
 document.getElementById('certModalCancel').onclick = () => closeModal('certModal');
-document.getElementById('cdClose').onclick = () => closeModal('certDetailModal');
+document.getElementById('cdClose').onclick = () => { closeModal('certDetailModal'); resetUrlHash(); };
 document.getElementById('wmClose').onclick = () => {
   closeModal('wataModal');
+  resetUrlHash();
   if (wmPollTimer) { clearInterval(wmPollTimer); wmPollTimer = null; }
 };
 document.querySelectorAll('.modal-backdrop').forEach(m => {
@@ -5458,6 +5724,7 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
     if (!q) {
       // Reset all
       document.querySelectorAll('.section').forEach(s => s.classList.remove('search-hidden'));
+      document.querySelectorAll('.vouchers-group').forEach(g => { g.style.display = ''; });
       document.querySelectorAll('.section-divider').forEach(d => d.style.display = '');
       noResults.style.display = 'none';
       infoEl.textContent = '';
@@ -5486,6 +5753,12 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
           if (nameEl) nameEl.innerHTML = highlight(nameEl.textContent, query.trim());
           if (descEl) descEl.innerHTML = highlight(descEl.textContent, query.trim());
         }
+      });
+
+      // Also hide/show group containers (vouchers-group) within this section
+      section.querySelectorAll('.vouchers-group').forEach(group => {
+        const hasVisible = Array.from(group.querySelectorAll(cfg.items)).some(c => c.style.display !== 'none');
+        group.style.display = hasVisible ? '' : 'none';
       });
 
       section.classList.toggle('search-hidden', visibleCount === 0);
@@ -5518,11 +5791,279 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
   });
 })();
 
+/* ═══════════════════ STEAM TOP-UP ═══════════════════ */
+let _steamServiceId = null;
+let _steamMinAmount = 1;
+
+async function loadSteamTopup() {
+  try {
+    const data = await fetchWata('/v3/topup');
+    const raw = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
+    const steamSvc = raw.find(s => {
+      const n = (s.name || s.title || '').toLowerCase();
+      return n.includes('steam') && !n.includes('gift') && !n.includes('card');
+    }) || raw.find(s => (s.name || s.title || '').toLowerCase().includes('steam'));
+    if (!steamSvc) throw new Error('Steam service not found');
+    _steamServiceId = String(steamSvc.id || steamSvc.serviceId);
+    // Fetch products to find min amount
+    const detail = await fetchWata('/v3/topup/' + _steamServiceId);
+    const products = (detail.details?.products || detail.products || []).filter(p => p.isAvailable !== false);
+    if (products.length) {
+      // Use flexible input - min from first product
+      const first = products[0];
+      _steamMinAmount = first.minPrice || first.price || 1;
+    }
+  } catch(e) {
+    console.warn('[Steam] load error:', e.message);
+  }
+  document.getElementById('steamTopupLoading').style.display = 'none';
+  document.getElementById('steamTopupForm').style.display = '';
+  updateSteamTotal();
+}
+
+function setSteamAmount(val) {
+  document.getElementById('steamAmountInput').value = val;
+  document.querySelectorAll('#steamQuickBtns .topup-quick-btn').forEach(b => {
+    b.classList.toggle('active', parseFloat(b.textContent) === val);
+  });
+  updateSteamTotal();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const steamAmt = document.getElementById('steamAmountInput');
+  if (steamAmt) {
+    steamAmt.addEventListener('input', () => {
+      document.querySelectorAll('#steamQuickBtns .topup-quick-btn').forEach(b => b.classList.remove('active'));
+      updateSteamTotal();
+    });
+  }
+  const tgStarsInp = document.getElementById('tgStarsInput');
+  if (tgStarsInp) {
+    tgStarsInp.addEventListener('input', () => {
+      document.querySelectorAll('#tgStarsForm .topup-quick-btn').forEach(b => b.classList.remove('active'));
+      updateTgStarsTotal();
+    });
+  }
+});
+
+function updateSteamTotal() {
+  const raw = parseFloat(document.getElementById('steamAmountInput')?.value) || 0;
+  const total = raw > 0 ? applyMarkup(raw) : 0;
+  const bar = document.getElementById('steamTotalBar');
+  if (bar) bar.textContent = total > 0 ? total.toLocaleString('ru-RU', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ₽ к оплате' : '0.00 ₽ к оплате';
+}
+
+async function submitSteamTopup() {
+  const account = document.getElementById('steamAccountInput').value.trim();
+  const amountRaw = parseFloat(document.getElementById('steamAmountInput').value);
+  const email = document.getElementById('steamEmailInput').value.trim();
+  const errEl = document.getElementById('steamTopupError');
+  errEl.style.display = 'none';
+
+  if (!account) { errEl.textContent = 'Введите имя аккаунта Steam'; errEl.style.display = ''; return; }
+  if (!amountRaw || amountRaw < 1) { errEl.textContent = 'Введите сумму пополнения'; errEl.style.display = ''; return; }
+  if (!email || !email.includes('@')) { errEl.textContent = 'Введите корректный email'; errEl.style.display = ''; return; }
+  if (!_steamServiceId) { errEl.textContent = 'Сервис Steam временно недоступен'; errEl.style.display = ''; return; }
+
+  const amount = applyMarkup(amountRaw);
+  const btn = document.getElementById('steamSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Обрабатываем...';
+
+  const orderId = genOrderId();
+  const body = {
+    topupId: _steamServiceId,
+    orderId,
+    email,
+    amount: Math.ceil(amount * 100) / 100,
+    description: 'Пополнение Steam: ' + account,
+    successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
+    failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
+    fields: { Input1: account }
+  };
+
+  try {
+    const result = await fetchWata('/v3/topup', { method: 'POST', body: JSON.stringify(body) });
+    wmCurrentOrder = { orderId, type: 'topup' };
+    openPaymentWindow(result.paymentLink, orderId, 'topup');
+    btn.disabled = false;
+    btn.textContent = 'Залить баланс';
+  } catch(e) {
+    errEl.textContent = 'Ошибка: ' + e.message;
+    errEl.style.display = '';
+    btn.disabled = false;
+    btn.textContent = 'Залить баланс';
+  }
+}
+
+/* ═══════════════════ TELEGRAM STARS ═══════════════════ */
+let _tgStarsServiceId = null;
+let _tgStarsPricePerStar = null; // price in RUB per 1 star
+
+async function loadTgStars() {
+  try {
+    const data = await fetchWata('/v3/topup');
+    const raw = Array.isArray(data) ? data : (data.data || data.items || data.result || []);
+    const tgSvc = raw.find(s => {
+      const n = (s.name || s.title || '').toLowerCase();
+      return (n.includes('telegram') || n.includes('tg')) && (n.includes('star') || n.includes('звезд'));
+    }) || raw.find(s => {
+      const n = (s.name || s.title || '').toLowerCase();
+      return n.includes('telegram');
+    });
+    if (!tgSvc) throw new Error('Telegram Stars service not found');
+    _tgStarsServiceId = String(tgSvc.id || tgSvc.serviceId);
+    // Fetch detail to find price per star
+    const detail = await fetchWata('/v3/topup/' + _tgStarsServiceId);
+    const products = (detail.details?.products || detail.products || []).filter(p => p.isAvailable !== false);
+    if (products.length) {
+      // Find price per unit (star)
+      const sample = products[0];
+      const pp = sample.pricePerUnit || sample.unitPrice || null;
+      if (pp) {
+        _tgStarsPricePerStar = applyMarkup(pp);
+      } else if (sample.minPrice && sample.minQuantity) {
+        _tgStarsPricePerStar = applyMarkup(sample.minPrice / sample.minQuantity);
+      } else if (sample.minPrice) {
+        // Assume single unit
+        _tgStarsPricePerStar = applyMarkup(sample.minPrice);
+      }
+    }
+    // Fallback rate from price field
+    if (!_tgStarsPricePerStar && tgSvc.minPrice) {
+      _tgStarsPricePerStar = applyMarkup(tgSvc.minPrice);
+    }
+  } catch(e) {
+    console.warn('[TgStars] load error:', e.message);
+  }
+
+  const rateEl = document.getElementById('tgStarsRate');
+  if (rateEl && _tgStarsPricePerStar) {
+    rateEl.textContent = _tgStarsPricePerStar.toFixed(2);
+  }
+  document.getElementById('tgStarsLoading').style.display = 'none';
+  document.getElementById('tgStarsForm').style.display = '';
+  updateTgStarsTotal();
+}
+
+function setTgStars(qty) {
+  document.getElementById('tgStarsInput').value = qty;
+  document.querySelectorAll('#tgStarsForm .topup-quick-btn').forEach(b => {
+    const n = parseInt(b.textContent);
+    b.classList.toggle('active', n === qty);
+  });
+  updateTgStarsTotal();
+}
+
+function updateTgStarsTotal() {
+  const qty = parseFloat(document.getElementById('tgStarsInput')?.value) || 0;
+  const rate = _tgStarsPricePerStar || 0;
+  const total = qty > 0 && rate > 0 ? qty * rate : 0;
+  const bar = document.getElementById('tgStarsTotalBar');
+  const rateEl = document.getElementById('tgStarsRate');
+  if (rateEl && rate) rateEl.textContent = rate.toFixed(2);
+  if (bar) {
+    if (qty > 0 && rate > 0) {
+      bar.innerHTML = qty + ' ⭐ × ' + rate.toFixed(2) + ' = <b>' + total.toLocaleString('ru-RU', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ₽</b>';
+    } else {
+      bar.innerHTML = '1 ⭐ = <span id="tgStarsRate">' + (rate ? rate.toFixed(2) : '—') + '</span> ₽';
+    }
+  }
+}
+
+async function submitTgStarsTopup() {
+  const username = document.getElementById('tgUsernameInput').value.trim().replace(/^@/, '');
+  const qty = parseFloat(document.getElementById('tgStarsInput').value);
+  const email = document.getElementById('tgEmailInput').value.trim();
+  const errEl = document.getElementById('tgStarsError');
+  errEl.style.display = 'none';
+
+  if (!username) { errEl.textContent = 'Введите ваш Telegram @username'; errEl.style.display = ''; return; }
+  if (!qty || qty < 1) { errEl.textContent = 'Введите количество звёзд'; errEl.style.display = ''; return; }
+  if (!email || !email.includes('@')) { errEl.textContent = 'Введите корректный email'; errEl.style.display = ''; return; }
+  if (!_tgStarsServiceId) { errEl.textContent = 'Сервис Telegram Stars временно недоступен'; errEl.style.display = ''; return; }
+
+  const rate = _tgStarsPricePerStar || 0;
+  const amount = rate > 0 ? Math.ceil(qty * rate * 100) / 100 : qty;
+
+  const btn = document.getElementById('tgStarsSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Обрабатываем...';
+
+  const orderId = genOrderId();
+  const body = {
+    topupId: _tgStarsServiceId,
+    orderId,
+    email,
+    amount,
+    description: 'Telegram Stars × ' + qty + ' для @' + username,
+    successRedirectUrl: SITE_URL + '?order=' + orderId + '&status=success',
+    failRedirectUrl: SITE_URL + '?order=' + orderId + '&status=fail',
+    fields: { Input1: username, Input2: String(Math.round(qty)) }
+  };
+
+  try {
+    const result = await fetchWata('/v3/topup', { method: 'POST', body: JSON.stringify(body) });
+    wmCurrentOrder = { orderId, type: 'topup' };
+    openPaymentWindow(result.paymentLink, orderId, 'topup');
+    btn.disabled = false;
+    btn.textContent = 'Купить';
+  } catch(e) {
+    errEl.textContent = 'Ошибка: ' + e.message;
+    errEl.style.display = '';
+    btn.disabled = false;
+    btn.textContent = 'Купить';
+  }
+}
+
+/* ═══════════════════ DEEP LINK ROUTING ═══════════════════ */
+async function handleDeepLink() {
+  const hash = location.hash;
+  if (!hash || hash.length < 2) return;
+
+  const raw = decodeURIComponent(hash.slice(1)); // remove '#'
+
+  if (raw.startsWith('voucher-')) {
+    const id = raw.slice(8);
+    // Wait for vouchers to potentially load, then open
+    await new Promise(r => setTimeout(r, 1200));
+    // Try to find name/img from loaded data
+    let name = '', img = '';
+    document.querySelectorAll('#vouchersGrid .wata-service-card, #servicesGrid .wata-service-card').forEach(card => {
+      if (card.dataset.serviceId === id) {
+        name = card.querySelector('.wata-service-name')?.textContent || '';
+        img = card.querySelector('img')?.src || '';
+      }
+    });
+    if (name) openVoucherDetail(id, name, img, null);
+  } else if (raw.startsWith('topup-')) {
+    const id = raw.slice(6);
+    await new Promise(r => setTimeout(r, 1200));
+    let name = '', img = '';
+    document.querySelectorAll('#servicesGrid .wata-service-card').forEach(card => {
+      if (card.dataset.serviceId === id) {
+        name = card.querySelector('.wata-service-name')?.textContent || '';
+        img = card.querySelector('img')?.src || '';
+      }
+    });
+    if (name) openTopupDetail(id, name, img);
+  } else if (raw.startsWith('cert-')) {
+    const id = raw.slice(5);
+    const certs = loadCerts();
+    const c = certs.find(x => x.id === id);
+    if (c) openCertDetail(c);
+  }
+}
+
+
 
 renderCerts();
 loadGiftCards();
 loadVouchers();
 loadServices();
+loadSteamTopup();
+loadTgStars();
+handleDeepLink();
 
 /* ─── MOBILE NAV ─── */
 (function() {

@@ -2969,27 +2969,33 @@ const API_BASE = 'https://silent-lab-b3f5.divfurhfyg.workers.dev';
 const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJQdWJsaWNJZCI6IjNhMWMwZTFkLTM5ZjUtNzJkYy1mYzE4LTYxMDkwODlkYjc3NCIsIlRva2VuVmVyc2lvbiI6IjMiLCJleHAiOjE4MDc2MjU0MTUsImlzcyI6Imh0dHBzOi8vYXBpLndhdGEucHJvIiwiYXVkIjoiaHR0cHM6Ly9hcGkud2F0YS5wcm8vYXBpL2gyaCJ9.1cy6ksQb-IgF1OZMeE1siKnr7AVgU1NtLjddHRWhgiU';
 const headers = { 'Authorization': `Bearer ${TOKEN}`, 'Content-Type': 'application/json' };
 
-/* ─── DIGITAL GOODS API (Steam / Telegram Stars) ─── */
-const DIGITAL_API_BASE = 'https://wata.pro/api/digital-goods';
-const STEAM_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJQdWJsaWNJZCI6IjNhMjE3NjM2LTE1YzQtMTE1OC1jYTY5LTFjNzdhMDdmOGI5MCIsIlRva2VuVmVyc2lvbiI6IjEiLCJleHAiOjE4MTEzNDYwMzIsImlzcyI6Imh0dHBzOi8vYXBpLndhdGEucHJvIiwiYXVkIjoiaHR0cHM6Ly9hcGkud2F0YS5wcm8vYXBpL2gyaCJ9.VuiVyUSoEjyzUrtnY3AjhrEvaYBwrVumKvFRAW5AAQA';
-const STARS_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJQdWJsaWNJZCI6IjNhMjE3NjQwLTc3Y2EtMWZjOS01YjRmLTI2ZjEzYmQ0OTg5MSIsIlRva2VuVmVyc2lvbiI6IjEiLCJleHAiOjE4MTEzNDU5OTcsImlzcyI6Imh0dHBzOi8vYXBpLndhdGEucHJvIiwiYXVkIjoiaHR0cHM6Ly9hcGkud2F0YS5wcm8vYXBpL2gyaCJ9.CS-TG_Ra3sTTWlLshFsUePBpvwXVWv1twY4ZV56PaqQ';
+/* ─── DIGITAL GOODS API (Steam / Telegram Stars) ─────────────────────────────
+   Запросы идут через прокси-воркер, который добавляет CORS и токены.
+   После деплоя digital-goods-worker.js на Cloudflare — вставьте URL ниже.
+   Пример: 'https://digital-goods-proxy.YOUR-NAME.workers.dev'
+─────────────────────────────────────────────────────────────────────────── */
+const DIGITAL_PROXY_BASE = 'https://digital-goods-proxy.divfurhfyg.workers.dev';
+
+// Заглушки — токены теперь хранятся в воркере, не в браузере
+const STEAM_TOKEN = null;
+const STARS_TOKEN = null;
 
 /**
- * Запрос к Digital Goods API WATA (Steam / Telegram Stars).
+ * Запрос через прокси-воркер к Digital Goods API (Steam / Telegram Stars).
+ * Токен добавляет воркер на сервере — браузер его не видит.
  * @param {string} endpoint — путь, напр. '/steam/amount'
- * @param {string} token    — STEAM_TOKEN или STARS_TOKEN
+ * @param {*} _token        — не используется (оставлен для совместимости вызовов)
  * @param {object} options  — fetch options (метод, body и т.д.)
  */
-async function fetchDigital(endpoint, token, options = {}) {
+async function fetchDigital(endpoint, _token, options = {}) {
   const { timeout = 20000, ...fetchOpts } = options;
   const ctrl = new AbortController();
   const tid = setTimeout(() => ctrl.abort(), timeout);
   try {
-    const res = await fetch(`${DIGITAL_API_BASE}${endpoint}`, {
+    const res = await fetch(`${DIGITAL_PROXY_BASE}${endpoint}`, {
       ...fetchOpts,
       signal: ctrl.signal,
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         ...(fetchOpts.headers || {}),
       },
